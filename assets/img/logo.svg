@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 170" role="img" aria-label="COSCO SHIPPING Puerto de Chancay">
+  <defs>
+    <clipPath id="half-l"><rect x="0" y="0" width="85" height="170"/></clipPath>
+    <clipPath id="half-r"><rect x="85" y="0" width="85" height="170"/></clipPath>
+  </defs>
+  <!-- Globo: dos arcos entrelazados azul/rojo -->
+  <g fill="none" stroke-width="11">
+    <circle cx="70" cy="85" r="58" stroke="#10559A" clip-path="url(#half-l)"/>
+    <circle cx="70" cy="85" r="58" stroke="#E01F26" clip-path="url(#half-r)"/>
+    <circle cx="100" cy="85" r="58" stroke="#E01F26" clip-path="url(#half-l)"/>
+    <circle cx="100" cy="85" r="58" stroke="#10559A" clip-path="url(#half-r)"/>
+  </g>
+  <!-- Franja blanca central para el texto -->
+  <rect x="0" y="55" width="170" height="60" fill="#fff"/>
+  <text x="85" y="82" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="34" fill="#10559A">COSCO</text>
+  <text x="85" y="108" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="20" letter-spacing="1" fill="#10559A">SHIPPING</text>
+  <!-- Puerto de Chancay -->
+  <text x="200" y="70" font-family="Segoe Script, Brush Script MT, cursive" font-size="34" fill="#10559A">Puerto de</text>
+  <text x="200" y="118" font-family="Segoe Script, Brush Script MT, cursive" font-weight="700" font-size="46" fill="#E01F26">Chancay</text>
+  <path d="M205 138 q60 18 170 6 q60 -7 130 -14 q-65 16 -130 22 q-105 10 -170 -14 z" fill="#10559A"/>
+</svg>
