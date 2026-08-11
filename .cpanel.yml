@@ -1,0 +1,9 @@
+deployment:
+  tasks:
+    - export DEPLOY_PATH=/home/portally/operatorcontrol.site
+    - /bin/mkdir -p $DEPLOY_PATH
+    - /bin/cp -R assets views $DEPLOY_PATH/
+    - /bin/mkdir -p $DEPLOY_PATH/app
+    - /usr/bin/find app -mindepth 1 -maxdepth 1 ! -name db.php -exec /bin/cp -R {} $DEPLOY_PATH/app/ \;
+    - /bin/cp config.php index.php $DEPLOY_PATH/
+    - echo "Despliegue completado en $(date)" >> $DEPLOY_PATH/deploy.log
