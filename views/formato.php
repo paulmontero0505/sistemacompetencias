@@ -154,7 +154,7 @@ $isPrint = isset($_GET['print']);
   </table>
 
   <table class="mt-3">
-    <tr><td class="firma-box" style="width:50%"><div style="border-top:1px solid #000; margin:0 30px; padding-top:4px">FIRMA DEL INSTRUCTOR</div></td><td class="firma-box"><div style="border-top:1px solid #000; margin:0 30px; padding-top:4px">FIRMA DEL OPERADOR</div></td></tr>
+    <tr><td class="firma-box" style="width:50%"><div style="border-top:1px solid #000; margin:0 30px; padding-top:4px">FIRMA DEL JEFE DEL CENTRO DE OPERACIONES<br><b>VASQUEZ BRUNO VICTOR ELIAS</b></div></td><td class="firma-box"><div style="border-top:1px solid #000; margin:0 30px; padding-top:4px">FIRMA DEL OPERADOR</div></td></tr>
   </table>
 </div>
 <?php elseif ($op): ?>
@@ -313,7 +313,7 @@ $isPrint = isset($_GET['print']);
 
   <table class="mt-3">
     <tr>
-      <td class="firma-box" style="width:50%"><div style="border-top:1px solid #000; margin:0 30px; padding-top:4px">FIRMA DEL INSTRUCTOR<br><b><?= h($evaluador ?: '') ?></b></div></td>
+      <td class="firma-box" style="width:50%"><div style="border-top:1px solid #000; margin:0 30px; padding-top:4px">FIRMA DEL JEFE DEL CENTRO DE OPERACIONES<br><b>VASQUEZ BRUNO VICTOR ELIAS</b></div></td>
       <td class="firma-box"><div style="border-top:1px solid #000; margin:0 30px; padding-top:4px">FIRMA DEL OPERADOR<br><b><?= h($op['nombres']) ?></b></div></td>
     </tr>
   </table>
