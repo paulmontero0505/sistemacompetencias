@@ -35,7 +35,7 @@ if ($op) {
             if (!isset($skills[$ctx])) $skills[$ctx] = $r;
         }
         // Velocidad: última medición
-        $st = db()->prepare("SELECT eficiencia ef, total_seg prom, fecha, 1 n FROM speed_records WHERE operator_id=? AND area=? ORDER BY fecha DESC, id DESC LIMIT 1");
+        $st = db()->prepare("SELECT eficiencia ef, total_seg prom, fecha, observaciones, 1 n FROM speed_records WHERE operator_id=? AND area=? ORDER BY fecha DESC, id DESC LIMIT 1");
         $st->execute([$opId, $areaS]);
         $speeds = $st->fetch() ?: [];
         // Horas: total acumulado en la grúa
@@ -53,7 +53,7 @@ if ($op) {
             $ctx = $r['contexto'] ?: 'GENERAL';
             if (!isset($skills[$ctx])) $skills[$ctx] = $r;
         }
-        $st = db()->prepare("SELECT eficiencia ef, total_seg prom, fecha, 1 n FROM speed_records WHERE operator_id=? AND area=? AND MONTH(fecha)=? AND YEAR(fecha)=? ORDER BY fecha DESC, id DESC LIMIT 1");
+        $st = db()->prepare("SELECT eficiencia ef, total_seg prom, fecha, observaciones, 1 n FROM speed_records WHERE operator_id=? AND area=? AND MONTH(fecha)=? AND YEAR(fecha)=? ORDER BY fecha DESC, id DESC LIMIT 1");
         $st->execute([$opId, $areaS, $mes, $anio]);
         $speeds = $st->fetch();
         $sqlHoras = "SELECT SUM(total_min) t, GROUP_CONCAT(DISTINCT tipo_actividad SEPARATOR ', ') acts FROM hours_records WHERE operator_id=? AND area=? AND MONTH(fecha)=? AND YEAR(fecha)=?";
@@ -65,12 +65,24 @@ if ($op) {
     }
 }
 $evaluador = '';
-$comentario = '';
 $descripcion = '';
+$observaciones = [];
 foreach ($skills as $s) {
     if (!$evaluador && $s['evaluador']) $evaluador = $s['evaluador'];
-    if (!$comentario && $s['comentarios']) $comentario = $s['comentarios'];
     if (!$descripcion) $descripcion = $s['tipo_capacitacion'];
+    $comentario = trim((string)($s['comentarios'] ?? ''));
+    if ($comentario !== '') {
+        $observaciones[] = [
+            'origen' => 'Habilidades · ' . ($s['contexto'] ?: 'GENERAL') . ' (' . $s['fecha'] . ')',
+            'texto' => $comentario,
+        ];
+    }
+}
+if (!empty($speeds['observaciones'])) {
+    $observaciones[] = [
+        'origen' => 'Velocidad (' . ($speeds['fecha'] ?? 'sin fecha') . ')',
+        'texto' => trim((string)$speeds['observaciones']),
+    ];
 }
 $isPrint = isset($_GET['print']);
 ?>
@@ -310,6 +322,19 @@ $isPrint = isset($_GET['print']);
       <td class="small"><?= h(mb_strimwidth($horas['acts'] ?? '—', 0, 90, '…')) ?></td>
     </tr>
   </table>
+
+  <?php if ($observaciones): ?>
+  <table class="mt-2">
+    <tr>
+      <td class="lbl" style="width:30%">OBSERVACIONES / COMENTARIOS</td>
+      <td>
+        <?php foreach ($observaciones as $observacion): ?>
+          <div class="mb-1"><b><?= h($observacion['origen']) ?>:</b> <?= nl2br(h($observacion['texto'])) ?></div>
+        <?php endforeach; ?>
+      </td>
+    </tr>
+  </table>
+  <?php endif; ?>
 
   <table class="mt-3">
     <tr>
