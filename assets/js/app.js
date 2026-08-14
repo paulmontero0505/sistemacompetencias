@@ -508,6 +508,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const filtro = document.getElementById('js-table-filter');
     if (filtro) {
         filtro.addEventListener('input', () => {
+            if (window.applyTableFilters) {
+                window.applyTableFilters();
+                return;
+            }
             const q = filtro.value.toLowerCase();
             document.querySelectorAll('table.js-filterable tbody tr').forEach(tr => {
                 tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';

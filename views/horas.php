@@ -28,9 +28,22 @@ endif;
 $cfg = $AREAS[$AREA_ACTUAL];
 $ops = operadores_activos($AREA_ACTUAL);
 $instructores = db()->query("SELECT nombre FROM users WHERE rol IN ('instructor','supervisor') AND activo=1 ORDER BY nombre")->fetchAll(PDO::FETCH_COLUMN);
-$rows = db()->prepare("SELECT h.*, o.nombres, o.dni, o.cargo FROM hours_records h JOIN operators o ON o.id=h.operator_id
-                       WHERE h.area=? ORDER BY h.fecha DESC, h.id DESC LIMIT 400");
-$rows->execute([$AREA_ACTUAL]);
+$yearsStmt = db()->prepare("SELECT DISTINCT YEAR(fecha) AS anio FROM hours_records WHERE area=? ORDER BY anio DESC");
+$yearsStmt->execute([$AREA_ACTUAL]);
+$years = array_map('strval', $yearsStmt->fetchAll(PDO::FETCH_COLUMN));
+$yearSel = (string)($_GET['anio'] ?? 'todos');
+if ($yearSel !== 'todos' && !in_array($yearSel, $years, true)) $yearSel = 'todos';
+
+$rowsSql = "SELECT h.*, o.nombres, o.dni, o.cargo FROM hours_records h JOIN operators o ON o.id=h.operator_id WHERE h.area=?";
+$rowsParams = [$AREA_ACTUAL];
+if ($yearSel !== 'todos') {
+    $rowsSql .= " AND h.fecha BETWEEN ? AND ?";
+    $rowsParams[] = $yearSel . '-01-01';
+    $rowsParams[] = $yearSel . '-12-31';
+}
+$rowsSql .= " ORDER BY h.fecha DESC, h.id DESC";
+$rows = db()->prepare($rowsSql);
+$rows->execute($rowsParams);
 $rows = $rows->fetchAll();
 
 $actividades = actividades_con_personalizadas($TIPOS_ACTIVIDAD);
@@ -82,11 +95,24 @@ foreach ($rows as $r) {
       <span class="input-group-text"><i class="bi bi-search"></i></span>
       <input class="form-control" id="js-table-filter" placeholder="Buscar por operador o detalle...">
     </div>
-    <div class="btn-group btn-group-sm" role="group" id="js-tipo-tabs">
-      <button type="button" class="btn btn-outline-primary active" data-tipo="TODOS">Todos</button>
-      <?php foreach ($TIPOS_PREPARACION as $t): ?>
-        <button type="button" class="btn btn-outline-primary" data-tipo="<?= h($t) ?>"><?= h($t) ?></button>
-      <?php endforeach; ?>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <form method="get" class="d-flex align-items-center gap-1">
+        <input type="hidden" name="page" value="horas">
+        <input type="hidden" name="area" value="<?= h($AREA_ACTUAL) ?>">
+        <label class="small fw-semibold text-muted" for="js-year-filter">Año</label>
+        <select class="form-select form-select-sm" id="js-year-filter" name="anio" onchange="this.form.submit()" aria-label="Filtrar registros por año">
+          <option value="todos" <?= $yearSel === 'todos' ? 'selected' : '' ?>>Todos los años</option>
+          <?php foreach ($years as $year): ?>
+            <option value="<?= h($year) ?>" <?= $yearSel === $year ? 'selected' : '' ?>><?= h($year) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </form>
+      <div class="btn-group btn-group-sm" role="group" id="js-tipo-tabs" aria-label="Filtrar por tipo de preparación">
+        <button type="button" class="btn btn-outline-primary active" data-tipo="TODOS">Todos</button>
+        <?php foreach ($TIPOS_PREPARACION as $t): ?>
+          <button type="button" class="btn btn-outline-primary" data-tipo="<?= h($t) ?>"><?= h($t) ?></button>
+        <?php endforeach; ?>
+      </div>
     </div>
   </div>
   <div class="table-responsive" style="max-height:65vh">
@@ -318,22 +344,33 @@ document.addEventListener('DOMContentLoaded', () => {
     statOps.textContent = ops.size;
   };
 
-  // Tabs por tipo de preparación
+  let tipoSeleccionado = 'TODOS';
+  const tableRows = document.querySelectorAll('table.js-filterable tbody tr');
+  const filterInput = document.getElementById('js-table-filter');
+  const applyTableFilters = () => {
+    const query = (filterInput?.value || '').toLowerCase();
+    tableRows.forEach(tr => {
+      if (!('min' in tr.dataset)) return;
+      const matchesType = tipoSeleccionado === 'TODOS' || tr.dataset.tipo === tipoSeleccionado;
+      const matchesQuery = !query || tr.textContent.toLowerCase().includes(query);
+      tr.style.display = matchesType && matchesQuery ? '' : 'none';
+    });
+    recalcStats();
+  };
+
+  // Tabs por tipo de preparación, combinados con la búsqueda por texto
   const tabs = document.querySelectorAll('#js-tipo-tabs button');
   tabs.forEach(btn => {
     btn.addEventListener('click', () => {
       tabs.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      const tipo = btn.dataset.tipo;
-      document.querySelectorAll('table.js-filterable tbody tr').forEach(tr => {
-        tr.style.display = (tipo === 'TODOS' || tr.dataset.tipo === tipo) ? '' : 'none';
-      });
-      recalcStats();
+      tipoSeleccionado = btn.dataset.tipo;
+      applyTableFilters();
     });
   });
 
-  // Filtro de búsqueda por texto (aplicado en app.js): recalcula tras cada cambio
-  window.onTableFilterChange = recalcStats;
+  // app.js delega aquí la búsqueda para no perder el filtro de tipo activo.
+  window.applyTableFilters = applyTableFilters;
 
   // Modal "Ver"
   const verModal = document.getElementById('modalVerHoras');
