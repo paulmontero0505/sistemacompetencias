@@ -70,7 +70,9 @@ $observaciones = [];
 foreach ($skills as $s) {
     if (!$evaluador && $s['evaluador']) $evaluador = $s['evaluador'];
     if (!$descripcion) $descripcion = $s['tipo_capacitacion'];
-    $comentario = trim((string)($s['comentarios'] ?? ''));
+    // El estado de aptitud no forma parte de la observación del evaluador.
+    $comentario = preg_replace('/(?:\s*[-.:]?\s*)\bAPTO\b\.?\s*$/iu', '', trim((string)($s['comentarios'] ?? '')));
+    $comentario = trim($comentario);
     if ($comentario !== '') {
         $observaciones[] = [
             'origen' => 'Habilidades · ' . ($s['contexto'] ?: 'GENERAL') . ' (' . $s['fecha'] . ')',
