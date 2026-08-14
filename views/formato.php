@@ -329,7 +329,7 @@ $isPrint = isset($_GET['print']);
       <td class="lbl" style="width:30%">OBSERVACIONES / COMENTARIOS</td>
       <td>
         <?php foreach ($observaciones as $observacion): ?>
-          <div class="mb-1"><b><?= h($observacion['origen']) ?>:</b> <?= nl2br(h($observacion['texto'])) ?></div>
+          <div class="mb-1"><?= nl2br(h($observacion['texto'])) ?></div>
         <?php endforeach; ?>
       </td>
     </tr>
