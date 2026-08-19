@@ -679,6 +679,12 @@ function handle_action(string $action): void {
             $sr = db()->prepare("SELECT i.*, o.nombres, o.cargo FROM incidents i JOIN operators o ON o.id=i.operator_id WHERE i.id=?");
             $sr->execute([$id]); $sr = $sr->fetch();
             if ($sr) sheets_upsert('incidencias', sheets_row_incidencia($sr));
+
+            if (!empty($_POST['ajax'])) {
+                header('Content-Type: application/json');
+                echo json_encode(['ok' => true, 'id' => $id, 'estado' => $finalEstado, 'warn' => $warn]);
+                exit;
+            }
             redirect('?page=incidencias');
         }
         case 'incident_delete': {

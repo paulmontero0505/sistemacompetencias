@@ -135,7 +135,7 @@ foreach ($rows as $r) {
             $initials = strtoupper(substr($parts[0] ?? 'OP', 0, 2));
         }
       ?>
-        <tr data-severidad="<?= h($r['severidad']) ?>" data-estado="<?= h($r['estado']) ?>" style="border-bottom: 1px solid #f1f5f9;">
+        <tr data-id="<?= $r['id'] ?>" data-severidad="<?= h($r['severidad']) ?>" data-estado="<?= h($r['estado']) ?>" style="border-bottom: 1px solid #f1f5f9;">
           <td class="ps-3 py-2">
             <div class="d-flex align-items-center gap-2">
               <div class="avatar-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" 
@@ -180,7 +180,7 @@ foreach ($rows as $r) {
           </td>
           <td class="py-2" style="font-size: 0.8rem; color: #475569;"><?= h($r['fecha']) ?></td>
           <td class="py-2" style="font-size: 0.8rem; color: #475569;"><?= h($r['reportado_por'] ?: '—') ?></td>
-          <td class="py-2">
+          <td class="py-2 js-estado-cell">
             <?php if ($r['estado'] === 'CERRADO' || $r['estado'] === 'CERRADA'): ?>
               <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.7rem;">CERRADO</span>
             <?php else: ?>
@@ -237,7 +237,7 @@ foreach ($rows as $r) {
 <div class="modal fade" id="mInc" tabindex="-1" data-bs-backdrop="static">
   <div class="modal-dialog" style="max-width: 580px;">
     <div class="modal-content">
-      <form method="post" action="?action=incident_save" enctype="multipart/form-data">
+      <form method="post" action="?action=incident_save" enctype="multipart/form-data" id="formIncidente">
         <div class="modal-header">
           <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning"></i> Detalle de Incidencia</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -595,5 +595,59 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Guardado por AJAX: actualiza la fila en el sitio sin recargar la página.
+  const incForm = document.getElementById('formIncidente');
+  if (incForm) {
+    incForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!incForm.reportValidity()) return;
+      const btn = incForm.querySelector('button[type=submit]');
+      const orig = btn.innerHTML;
+      btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+      try {
+        const fd = new FormData(incForm);
+        fd.append('ajax', '1');
+        const res = await fetch(incForm.action, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data.ok) throw new Error('Respuesta inválida');
+
+        const row = document.querySelector(`tr[data-id="${data.id}"]`);
+        if (row) {
+          row.dataset.estado = data.estado;
+          const cell = row.querySelector('.js-estado-cell');
+          if (cell) {
+            const cerrado = (data.estado === 'CERRADO' || data.estado === 'CERRADA');
+            cell.innerHTML = cerrado
+              ? '<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.7rem;">CERRADO</span>'
+              : '<span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 0.7rem; color: #d97706 !important;">EN PROCESO</span>';
+          }
+        }
+        recalcStats();
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('mInc'));
+        if (modal) modal.hide();
+        showFlashOk(data.estado === 'CERRADO' || data.estado === 'CERRADA' ? 'Incidencia guardada como CERRADO' : 'Incidencia guardada');
+      } catch (err) {
+        alert('No se pudo guardar la incidencia. Inténtalo de nuevo.');
+      } finally {
+        btn.disabled = false; btn.innerHTML = orig;
+      }
+    });
+  }
+
+  window.showFlashOk = (msg) => {
+    let el = document.getElementById('js-ajax-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'js-ajax-toast';
+      el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:1080;background:#10b981;color:#fff;padding:10px 16px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.2);font-size:.85rem;font-weight:600;opacity:0;transition:opacity .25s ease;';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(window.__toastT);
+    window.__toastT = setTimeout(() => el.style.opacity = '0', 2500);
+  };
 });
 </script>
