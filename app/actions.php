@@ -529,7 +529,7 @@ function handle_action(string $action): void {
                 $total += $s;
             }
             $estimado = parse_seconds($_POST['estimado'] ?? '');
-            $ef = ($total > 0 && $estimado > 0) ? round(min(150, $estimado / $total * 100), 2) : 0;
+            $ef = ($total > 0 && $estimado > 0) ? round(min(100, $estimado / $total * 100), 2) : 0;
             $status = calc_status($ef >= 100 ? 100 : $ef);
             if ($id) {
                 db()->prepare("UPDATE speed_records SET operator_id=?, area=?, fecha=?, tipo_capacitacion=?, lugar=?, contexto=?, evaluador=?, fases=?, total_seg=?, estimado_seg=?, eficiencia=?, status=?, movimientos=?, cumple=?, observaciones=? WHERE id=?")

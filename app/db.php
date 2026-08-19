@@ -151,6 +151,13 @@ function db(): PDO {
             $pdo->prepare("INSERT INTO schema_migrations (name) VALUES ('seed_operator_grua_estado')")->execute();
         }
 
+        if (!in_array('speed_ef_max_100', $applied, true)) {
+            // La eficiencia (Score time) no debe superar 100%. Ajusta solo los registros históricos que excedían el límite.
+            $pdo->exec("UPDATE speed_records SET status = 'OPTIMO', cumple = 1 WHERE eficiencia > 100");
+            $pdo->exec("UPDATE speed_records SET eficiencia = 100 WHERE eficiencia > 100");
+            $pdo->prepare("INSERT INTO schema_migrations (name) VALUES ('speed_ef_max_100')")->execute();
+        }
+
         if (!in_array('incident_estado_cerrado', $applied, true)) {
             // Amplía el estado de incidencias para aceptar el cierre sin declaración (CERRADO).
             $pdo->exec("ALTER TABLE incidents MODIFY COLUMN estado ENUM('ABIERTA','EN PROCESO','CERRADA','CERRADO') NOT NULL DEFAULT 'EN PROCESO'");
