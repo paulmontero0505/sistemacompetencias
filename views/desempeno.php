@@ -108,11 +108,11 @@ foreach ($lastByOpCtx as $byCtx) {
 }
 $colLugares = array_values(array_merge($lugares, $extraCtx));
 
-// Niveles de habilidad: bajo <50 · básico 50–69.9 · promedio 70–84.9 · avanzado ≥85.
+// Niveles de habilidad (independiente del tipo de grúa): bajo <75 · inicial 75–85 · intermedio 86–95 · experto ≥96.
 if (!function_exists('desempeno_habclass')) {
-    function desempeno_habclass(float $p): string { return $p >= 85 ? 'AVANZADO' : ($p >= 70 ? 'PROMEDIO' : ($p >= 50 ? 'BASICO' : 'BAJO')); }
+    function desempeno_habclass(float $p): string { return $p >= 96 ? 'EXPERTO' : ($p >= 86 ? 'INTERMEDIO' : ($p >= 75 ? 'INICIAL' : 'BAJO')); }
     function desempeno_habbadge(float $p): string {
-        $cls = $p >= 85 ? 'success-subtle text-success border border-success-subtle' : ($p >= 70 ? 'primary-subtle text-primary border border-primary-subtle' : ($p >= 50 ? 'warning-subtle text-warning-emphasis border border-warning-subtle' : 'danger-subtle text-danger border border-danger-subtle'));
+        $cls = $p >= 96 ? 'success-subtle text-success border border-success-subtle' : ($p >= 86 ? 'primary-subtle text-primary border border-primary-subtle' : ($p >= 75 ? 'warning-subtle text-warning-emphasis border border-warning-subtle' : 'danger-subtle text-danger border border-danger-subtle'));
         return '<span class="badge bg-' . $cls . '">' . number_format($p, 1) . '%</span>';
     }
     // Velocidad (Score time) mantiene la clasificación estándar (80/50)
@@ -124,7 +124,7 @@ if (!function_exists('desempeno_habclass')) {
 }
 
 // Conteo inicial por nivel (vista "Todos", promedio general por operador).
-$cntAvanzado = $cntPromedio = $cntBasico = $cntBajo = 0;
+$cntExperto = $cntIntermedio = $cntInicial = $cntBajo = 0;
 $cargosDesignados = [];
 $aptitudPorEstado = [
     'ENTRENAMIENTO' => ['aptos' => 0, 'no_aptos' => 0, 'sin_evaluacion' => 0],
@@ -143,7 +143,7 @@ foreach ($ops as $o) {
         $aptitudPorEstado[$estado][skill_es_apto($score, $AREA_ACTUAL) ? 'aptos' : 'no_aptos']++;
     }
     $c = desempeno_habclass($score);
-    if ($c === 'AVANZADO') $cntAvanzado++; elseif ($c === 'PROMEDIO') $cntPromedio++; elseif ($c === 'BASICO') $cntBasico++; else $cntBajo++;
+    if ($c === 'EXPERTO') $cntExperto++; elseif ($c === 'INTERMEDIO') $cntIntermedio++; elseif ($c === 'INICIAL') $cntInicial++; else $cntBajo++;
 }
 ksort($cargosDesignados, SORT_NATURAL | SORT_FLAG_CASE);
 ?>
@@ -190,16 +190,16 @@ ksort($cargosDesignados, SORT_NATURAL | SORT_FLAG_CASE);
     <?php if ($aptitudPorEstado['REENTRENAMIENTO']['sin_evaluacion']): ?><div class="stat-level-detail"><span>Sin evaluación</span><b id="js-retraining-pending"><?= $aptitudPorEstado['REENTRENAMIENTO']['sin_evaluacion'] ?></b></div><?php endif; ?>
   </div>
   <div class="stat-tile stat-tile-optimal">
-    <div class="stat-label">Aptos <small class="text-muted">(≥70%)</small></div>
-    <div class="stat-value text-success" id="js-card-aptos"><?= $cntAvanzado + $cntPromedio ?></div>
-    <div class="stat-level-detail"><span>Nivel avanzado (≥85%)</span><b id="js-card-avanzado"><?= $cntAvanzado ?></b></div>
-    <div class="stat-level-detail"><span>Nivel promedio (70–84.9%)</span><b id="js-card-promedio"><?= $cntPromedio ?></b></div>
+    <div class="stat-label">Aptos <small class="text-muted">(≥86%)</small></div>
+    <div class="stat-value text-success" id="js-card-aptos"><?= $cntExperto + $cntIntermedio ?></div>
+    <div class="stat-level-detail"><span>Nivel Experto (96–100%)</span><b id="js-card-experto"><?= $cntExperto ?></b></div>
+    <div class="stat-level-detail"><span>Nivel Intermedio (86–95%)</span><b id="js-card-intermedio"><?= $cntIntermedio ?></b></div>
   </div>
   <div class="stat-tile stat-tile-low">
-    <div class="stat-label">No aptos <small class="text-muted">(&lt;70%)</small></div>
-    <div class="stat-value text-danger" id="js-card-no-aptos"><?= $cntBasico + $cntBajo ?></div>
-    <div class="stat-level-detail"><span>Nivel básico (50–69.9%)</span><b id="js-card-basico"><?= $cntBasico ?></b></div>
-    <div class="stat-level-detail"><span>Nivel bajo (&lt;50%)</span><b id="js-card-bajo"><?= $cntBajo ?></b></div>
+    <div class="stat-label">No aptos <small class="text-muted">(&lt;86%)</small></div>
+    <div class="stat-value text-danger" id="js-card-no-aptos"><?= $cntInicial + $cntBajo ?></div>
+    <div class="stat-level-detail"><span>Nivel Inicial (75–85%)</span><b id="js-card-inicial"><?= $cntInicial ?></b></div>
+    <div class="stat-level-detail"><span>Nivel bajo (&lt;75%)</span><b id="js-card-bajo"><?= $cntBajo ?></b></div>
   </div>
 </div>
 
@@ -231,10 +231,10 @@ ksort($cargosDesignados, SORT_NATURAL | SORT_FLAG_CASE);
         <small class="text-muted fw-semibold text-uppercase text-nowrap" style="font-size:.7rem">Clasificación:</small>
         <select class="form-select form-select-sm" id="js-clase-filter">
           <option value="all">Todos</option>
-          <option value="AVANZADO">Nivel avanzado (≥85%)</option>
-          <option value="PROMEDIO">Nivel promedio (70–84.9%)</option>
-          <option value="BASICO">Nivel básico (50–69.9%)</option>
-          <option value="BAJO">Nivel bajo (&lt;50%)</option>
+          <option value="EXPERTO">Nivel Experto (96–100%)</option>
+          <option value="INTERMEDIO">Nivel Intermedio (86–95%)</option>
+          <option value="INICIAL">Nivel Inicial (75–85%)</option>
+          <option value="BAJO">Nivel bajo (&lt;75%)</option>
         </select>
       </div>
       <div class="performance-filter-field">
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const habBadge = (v) => {
     if (v === undefined || v === '' || isNaN(parseFloat(v))) return '<span class="text-muted">—</span>';
     const n = parseFloat(v);
-    const cls = n >= 85 ? 'success-subtle text-success border border-success-subtle' : (n >= 70 ? 'primary-subtle text-primary border border-primary-subtle' : (n >= 50 ? 'warning-subtle text-warning-emphasis border border-warning-subtle' : 'danger-subtle text-danger border border-danger-subtle'));
+    const cls = n >= 96 ? 'success-subtle text-success border border-success-subtle' : (n >= 86 ? 'primary-subtle text-primary border border-primary-subtle' : (n >= 75 ? 'warning-subtle text-warning-emphasis border border-warning-subtle' : 'danger-subtle text-danger border border-danger-subtle'));
     return '<span class="badge bg-' + cls + '">' + n.toFixed(1) + '%</span>';
   };
 
@@ -408,9 +408,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const horasGrp  = document.getElementById('js-horas-filter');
   const search    = document.getElementById('js-desemp-search');
   const habTag    = document.getElementById('js-hab-th-tag');
-  const cardA = document.getElementById('js-card-avanzado');
-  const cardP = document.getElementById('js-card-promedio');
-  const cardBa = document.getElementById('js-card-basico');
+  const cardA = document.getElementById('js-card-experto');
+  const cardP = document.getElementById('js-card-intermedio');
+  const cardBa = document.getElementById('js-card-inicial');
   const cardB = document.getElementById('js-card-bajo');
   const cardAptos = document.getElementById('js-card-aptos');
   const cardNoAptos = document.getElementById('js-card-no-aptos');
@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const claseDe = (val) => {
     if (val === undefined || val === '' || isNaN(parseFloat(val))) return null;
     const n = parseFloat(val);
-    return n >= 85 ? 'AVANZADO' : (n >= 70 ? 'PROMEDIO' : (n >= 50 ? 'BASICO' : 'BAJO'));
+    return n >= 96 ? 'EXPERTO' : (n >= 86 ? 'INTERMEDIO' : (n >= 75 ? 'INICIAL' : 'BAJO'));
   };
 
   const applyFilters = () => {
@@ -453,11 +453,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 3) Conteo de tarjetas: según estado+búsqueda (no según la clasificación elegida)
       if (okBase && clase) {
-        if (clase === 'AVANZADO') cA++; else if (clase === 'PROMEDIO') cP++; else if (clase === 'BASICO') cBa++; else cB++;
+        if (clase === 'EXPERTO') cA++; else if (clase === 'INTERMEDIO') cP++; else if (clase === 'INICIAL') cBa++; else cB++;
       }
       if (okBase && aptitudeByStatus[tr.dataset.estado]) {
         if (!clase) aptitudeByStatus[tr.dataset.estado].pending++;
-        else if (clase === 'AVANZADO' || clase === 'PROMEDIO') aptitudeByStatus[tr.dataset.estado].aptos++;
+        else if (clase === 'EXPERTO' || clase === 'INTERMEDIO') aptitudeByStatus[tr.dataset.estado].aptos++;
         else aptitudeByStatus[tr.dataset.estado].noAptos++;
       }
     });
