@@ -217,12 +217,6 @@ foreach ($rows as $r) {
                   'reportado_por' => $r['reportado_por']
               ])) ?>'
               data-attachments='<?= h(json_encode(['fotos' => $rFotos, 'declaracion' => $rDecl])) ?>'><i class="bi bi-pencil"></i></button>
-            <?php if ($r['estado'] !== 'CERRADO' && $r['estado'] !== 'CERRADA'): ?>
-            <form method="post" action="?action=incident_close" class="d-inline" onsubmit="return confirm('¿Marcar esta incidencia como CERRADO?')">
-              <input type="hidden" name="id" value="<?= $r['id'] ?>">
-              <button class="btn btn-sm btn-outline-success py-0 px-2" style="font-size: 0.75rem;" title="Marcar como cerrado"><i class="bi bi-check-circle"></i></button>
-            </form>
-            <?php endif; ?>
             <?php if (is_admin()): ?>
             <form method="post" action="?action=incident_delete" class="d-inline" onsubmit="return confirm('¿Eliminar incidencia?')">
               <input type="hidden" name="id" value="<?= $r['id'] ?>">
@@ -330,6 +324,12 @@ foreach ($rows as $r) {
               </label>
               <div id="incDeclActual" class="mb-2"></div>
               <input type="file" name="declaracion" class="form-control form-control-sm" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+              <div class="form-check mt-2 mb-0">
+                <input class="form-check-input" type="checkbox" name="sin_declaracion" id="incSinDeclaracion" value="1">
+                <label class="form-check-label small fw-semibold text-muted" for="incSinDeclaracion">
+                  <i class="bi bi-check2-circle text-success"></i> Marcar sin declaración <span class="text-muted fw-normal">(no será necesario subir el documento)</span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -344,20 +344,22 @@ foreach ($rows as $r) {
 
 <!-- Modal: Ver Registro -->
 <div class="modal fade" id="modalVerIncidencia" tabindex="-1" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered" style="max-width: 650px;">
-    <div class="modal-content shadow-lg border-0" style="border-radius: 16px; overflow: hidden;">
-      <div class="modal-header bg-light border-bottom py-3">
-        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 1.1rem;">
-          <i class="bi bi-file-earmark-text-fill text-primary"></i> Detalle de la Incidencia
+  <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 1000px;">
+    <div class="modal-content inc-detail-modal border-0" style="border-radius: 20px; overflow: hidden;">
+      <div class="inc-detail-accent" id="js-ver-accent"></div>
+      <div class="modal-header border-bottom py-3 px-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 1.05rem;">
+          <span class="inc-detail-title-ico"><i class="bi bi-file-earmark-text-fill text-white"></i></span>
+          Detalle de la Incidencia
+          <span id="js-ver-estado-badge" class="ms-1"></span>
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-4">
-        <table class="table table-borderless table-sm mb-3" id="js-ver-body"></table>
-        
-        <div id="js-ver-att" class="pt-3 border-top"></div>
+        <div id="js-ver-body" class="inc-detail-grid"></div>
+        <div id="js-ver-att" class="pt-4 mt-1"></div>
       </div>
-      <div class="modal-footer bg-light border-top py-2 px-4">
+      <div class="modal-footer border-top py-2 px-4">
         <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Cerrar</button>
       </div>
     </div>
@@ -462,17 +464,36 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Modal "Ver"
+  const fieldIcons = {
+    'Fecha': 'bi-calendar3', 'Operador': 'bi-person', 'Cargo': 'bi-briefcase', 'Área': 'bi-geo-alt',
+    'Equipo': 'bi-tools', 'Tipo': 'bi-tag', 'Severidad': 'bi-exclamation-triangle', 'Estado': 'bi-flag',
+    'Descripción': 'bi-card-text', 'Reportado por': 'bi-person-badge',
+  };
   const verModal = document.getElementById('modalVerIncidencia');
   if (verModal) {
     verModal.addEventListener('show.bs.modal', ev => {
       const data = JSON.parse(ev.relatedTarget.dataset.ver || '{}');
+      const isClosed = (data['Estado'] === 'CERRADO' || data['Estado'] === 'CERRADA');
+
+      // Franja superior + badge de estado en el encabezado
+      const accent = document.getElementById('js-ver-accent');
+      if (accent) accent.className = 'inc-detail-accent ' + (isClosed ? 'is-closed' : 'is-open');
+      const estadoBadge = document.getElementById('js-ver-estado-badge');
+      if (estadoBadge) {
+        estadoBadge.innerHTML = isClosed
+          ? '<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1 fw-semibold" style="font-size:0.7rem;"><i class="bi bi-check-circle me-1"></i>CERRADO</span>'
+          : '<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 fw-semibold" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>EN PROCESO</span>';
+      }
+
+      // Rejilla de campos en 2 columnas
       const body = document.getElementById('js-ver-body');
       body.innerHTML = Object.entries(data).map(([k, v]) => {
         let val = v || '—';
+        const isDesc = (k === 'Descripción');
         if (k === 'Estado') {
-          const isClosed = (v === 'CERRADO' || v === 'CERRADA');
-          const cls = isClosed ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
-          val = `<span class="badge rounded-pill ${cls} px-2 py-1" style="font-size:0.75rem;">${isClosed ? 'CERRADO' : 'EN PROCESO'}</span>`;
+          val = isClosed
+            ? '<span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size:0.72rem;"><i class="bi bi-check-circle me-1"></i>CERRADO</span>'
+            : '<span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1" style="font-size:0.72rem;"><i class="bi bi-clock me-1"></i>EN PROCESO</span>';
         } else if (k === 'Severidad') {
           const map = {
             'LEVE': 'bg-success-subtle text-success border border-success-subtle',
@@ -481,14 +502,15 @@ document.addEventListener('DOMContentLoaded', () => {
           };
           const cls = map[v] ?? 'bg-secondary-subtle text-secondary';
           let customStyle = (v === 'MODERADA') ? 'style="color:#fd7e14 !important;"' : '';
-          val = `<span class="badge rounded-pill ${cls} px-2 py-1" ${customStyle} style="font-size:0.75rem;">${v}</span>`;
-        } else if (k === 'Descripción') {
-          val = `<div class="p-2 bg-light rounded text-dark" style="font-size:0.85rem; line-height:1.4; white-space:pre-line;">${v}</div>`;
+          val = `<span class="badge rounded-pill ${cls} px-2 py-1" ${customStyle} style="font-size:0.72rem;">${v}</span>`;
         }
-        return `<tr style="border-bottom:1px solid #f1f5f9;">
-                  <th class="text-muted small ps-2 py-2 align-top" style="width:35%; font-weight:600;">${k}</th>
-                  <td class="pe-2 py-2 align-middle" style="font-size:0.88rem;">${val}</td>
-                </tr>`;
+        if (isDesc) {
+          val = `<div class="inc-detail-desc">${v}</div>`;
+        }
+        return `<div class="inc-detail-item ${isDesc ? 'inc-detail-item--full' : ''}">
+                  <span class="inc-detail-label"><i class="bi ${fieldIcons[k] || 'bi-dot'}"></i> ${k}</span>
+                  <div class="inc-detail-value">${val}</div>
+                </div>`;
       }).join('');
 
       // Adjuntos (Google Drive)
@@ -496,39 +518,45 @@ document.addEventListener('DOMContentLoaded', () => {
       try { att = JSON.parse(ev.relatedTarget.dataset.verAtt || '{}'); } catch (e) {}
       const attBox = document.getElementById('js-ver-att');
       let ah = '';
-      
-      if (att.fotos && att.fotos.length) {
-        ah += '<div class="fw-semibold text-dark small text-uppercase mb-2"><i class="bi bi-images text-primary me-1"></i> Evidencia fotográfica</div>';
-        ah += '<div class="d-flex flex-wrap gap-2 mb-3">';
-        att.fotos.forEach(f => {
-          ah += `<a href="${f.url}" target="_blank" rel="noopener" class="d-inline-block border rounded overflow-hidden shadow-sm hover-shadow" title="Ver foto en tamaño completo">
-                   <img src="${f.thumb || f.url}" style="width:100px;height:100px;object-fit:cover;display:block;">
-                 </a>`;
-        });
-        ah += '</div>';
-      }
 
-      if (att.declaracion && att.declaracion.url) {
-        const docName = att.declaracion.name || 'Documento de Declaración';
-        ah += '<div class="fw-semibold text-dark small text-uppercase mb-2"><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Declaración adjunta</div>';
-        ah += `<div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between gap-3 shadow-sm">
-                 <div class="d-flex align-items-center gap-2 text-truncate">
-                   <i class="bi bi-file-earmark-text fs-3 text-primary"></i>
-                   <div class="text-truncate">
-                     <div class="fw-bold text-dark text-truncate" style="font-size: 0.88rem;">${docName}</div>
-                     <div class="text-muted small" style="font-size: 0.75rem;">Documento oficial cargado</div>
+      const hasFotos = att.fotos && att.fotos.length;
+      const hasDecl = att.declaracion && att.declaracion.url;
+
+      if (hasFotos || hasDecl) {
+        ah += '<div class="inc-detail-section-title"><i class="bi bi-paperclip"></i> Adjuntos</div>';
+        ah += '<div class="inc-att-row">';
+
+        if (hasFotos) {
+          ah += '<div class="inc-att-fotos">';
+          ah += '<div class="inc-att-label"><i class="bi bi-images me-1"></i> Evidencia fotográfica</div>';
+          ah += '<div class="d-flex flex-wrap gap-2">';
+          att.fotos.forEach(f => {
+            ah += `<a href="${f.url}" target="_blank" rel="noopener" class="inc-foto-thumb" title="Ver foto en tamaño completo">
+                     <img src="${f.thumb || f.url}" alt="evidencia">
+                   </a>`;
+          });
+          ah += '</div></div>';
+        }
+
+        if (hasDecl) {
+          const docName = att.declaracion.name || 'Documento de Declaración';
+          ah += `<div class="inc-decl-card">
+                   <div class="inc-decl-ico"><i class="bi bi-file-earmark-pdf-fill"></i></div>
+                   <div class="inc-decl-body">
+                     <div class="inc-decl-name">${docName}</div>
+                     <div class="inc-decl-sub">Documento oficial · Declaración</div>
+                     <a href="${att.declaracion.url}" target="_blank" rel="noopener" class="inc-decl-btn">
+                       <i class="bi bi-box-arrow-up-right"></i> Abrir documento
+                     </a>
                    </div>
-                 </div>
-                 <a href="${att.declaracion.url}" target="_blank" rel="noopener" class="btn btn-primary btn-sm px-3 flex-shrink-0 fw-semibold d-flex align-items-center gap-1">
-                   <i class="bi bi-box-arrow-up-right"></i> Abrir documento
-                 </a>
-               </div>`;
+                 </div>`;
+        }
+
+        ah += '</div>';
+      } else {
+        ah = '<div class="inc-detail-empty"><i class="bi bi-info-circle me-1"></i> No hay fotos ni declaración adjunta a esta incidencia.</div>';
       }
 
-      if (!ah) {
-        ah = '<div class="text-muted small italic p-2 bg-light rounded text-center"><i class="bi bi-info-circle me-1"></i> No hay fotos ni declaración adjunta a esta incidencia.</div>';
-      }
-      
       attBox.innerHTML = ah;
     });
   }
@@ -557,6 +585,14 @@ document.addEventListener('DOMContentLoaded', () => {
         declBox.innerHTML = '';
       }
       incModal.querySelectorAll('input[type=file]').forEach(i => i.value = '');
+
+      // Pre-marcar "cerrar sin declaración" cuando se edita una incidencia cerrada sin documento.
+      const sinDecl = incModal.querySelector('#incSinDeclaracion');
+      if (sinDecl) {
+        const estado = rt && rt.dataset.fillForm ? (JSON.parse(rt.dataset.fillForm).estado ?? '') : '';
+        const tieneDecl = !!(att.declaracion && att.declaracion.id);
+        sinDecl.checked = (estado === 'CERRADO' || estado === 'CERRADA') && !tieneDecl;
+      }
     });
   }
 });
