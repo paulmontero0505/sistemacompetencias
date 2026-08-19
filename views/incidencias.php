@@ -217,6 +217,12 @@ foreach ($rows as $r) {
                   'reportado_por' => $r['reportado_por']
               ])) ?>'
               data-attachments='<?= h(json_encode(['fotos' => $rFotos, 'declaracion' => $rDecl])) ?>'><i class="bi bi-pencil"></i></button>
+            <?php if ($r['estado'] !== 'CERRADO' && $r['estado'] !== 'CERRADA'): ?>
+            <form method="post" action="?action=incident_close" class="d-inline" onsubmit="return confirm('¿Marcar esta incidencia como CERRADO?')">
+              <input type="hidden" name="id" value="<?= $r['id'] ?>">
+              <button class="btn btn-sm btn-outline-success py-0 px-2" style="font-size: 0.75rem;" title="Marcar como cerrado"><i class="bi bi-check-circle"></i></button>
+            </form>
+            <?php endif; ?>
             <?php if (is_admin()): ?>
             <form method="post" action="?action=incident_delete" class="d-inline" onsubmit="return confirm('¿Eliminar incidencia?')">
               <input type="hidden" name="id" value="<?= $r['id'] ?>">

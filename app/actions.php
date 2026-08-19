@@ -571,6 +571,12 @@ function handle_action(string $action): void {
             $id = (int)($_POST['id'] ?? 0);
             $severidad = trim($_POST['severidad'] ?? 'LEVE');   // fallback si se edita un registro antiguo
             $acciones  = trim($_POST['acciones']  ?? '');
+            // Estado previo (solo para edición): se respeta un cierre manual sin declaración.
+            $prevEstado = 'EN PROCESO';
+            if ($id) {
+                $pe = db()->query("SELECT estado FROM incidents WHERE id=" . (int)$id)->fetch();
+                if ($pe) $prevEstado = $pe['estado'];
+            }
             // Por defecto cuando se genera la incidencia, el estado es EN PROCESO
             $estado    = 'EN PROCESO';
             $data = [(int)$_POST['operator_id'], $_POST['area'], $_POST['fecha'], trim($_POST['equipo'] ?? ''),
@@ -657,8 +663,19 @@ function handle_action(string $action): void {
                 }
             }
 
-            // Determinar estado final: CERRADO si tiene declaración adjunta, sino EN PROCESO
-            $finalEstado = ($decl && !empty($decl['id']) && !empty($decl['url'])) ? 'CERRADO' : 'EN PROCESO';
+            // Determinar estado final:
+            //  - CERRADO si hay declaración adjunta
+            //  - CERRADO si ya estaba cerrado manualmente (sin declaración) y no se quitó la declaración
+            //  - EN PROCESO en cualquier otro caso
+            $nuevaDecl = $decl && !empty($decl['id']) && !empty($decl['url']);
+            $quitaDecl = !empty($_POST['del_declaracion']);
+            if ($nuevaDecl) {
+                $finalEstado = 'CERRADO';
+            } elseif (!$quitaDecl && $prevEstado === 'CERRADO') {
+                $finalEstado = 'CERRADO';
+            } else {
+                $finalEstado = 'EN PROCESO';
+            }
 
             // Persistir referencias y estado final
             db()->prepare("UPDATE incidents SET fotos=?, declaracion=?, estado=? WHERE id=?")->execute([
@@ -680,6 +697,17 @@ function handle_action(string $action): void {
                 db()->prepare("DELETE FROM incidents WHERE id=?")->execute([(int)$_POST['id']]);
                 sheets_delete('incidencias', (int)$_POST['id']);
                 flash('ELIMINADO', 'danger');
+            }
+            redirect('?page=incidencias');
+        }
+        case 'incident_close': {
+            $id = (int)($_POST['id'] ?? 0);
+            if ($id) {
+                db()->prepare("UPDATE incidents SET estado='CERRADO' WHERE id=?")->execute([$id]);
+                $sr = db()->prepare("SELECT i.*, o.nombres, o.cargo FROM incidents i JOIN operators o ON o.id=i.operator_id WHERE i.id=?");
+                $sr->execute([$id]); $sr = $sr->fetch();
+                if ($sr) sheets_upsert('incidencias', sheets_row_incidencia($sr));
+                flash('Incidencia marcada como CERRADO');
             }
             redirect('?page=incidencias');
         }
