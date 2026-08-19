@@ -76,12 +76,13 @@ $totVel = (int)$rowV['tot'];
 // ── KPI incidencias ─────────────────────────────────────────
 $totInc = (int) db()->query("SELECT COUNT(*) FROM incidents i JOIN operators o ON o.id=i.operator_id WHERE 1=1 $wI")->fetchColumn();
 
-// ── Gráfico: horas por mes ──────────────────────────────────
-$wHmes = $wH . (!$hayFiltroFecha ? " AND h.fecha >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)" : "");
+// ── Gráfico: horas de entrenamiento (TRAINING) por mes ───────
+$wHmes = $wH . " AND h.tipo_preparacion='TRAINING'" . (!$hayFiltroFecha ? " AND h.fecha >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)" : "");
 $horasSerie = db()->query("SELECT DATE_FORMAT(h.fecha,'%Y-%m') ym, SUM(h.total_min) t
     FROM hours_records h JOIN operators o ON o.id=h.operator_id WHERE 1=1 $wHmes GROUP BY ym ORDER BY ym")->fetchAll();
 $serieLabels=[]; $serieData=[];
 foreach ($horasSerie as $r) { $serieLabels[]=$r['ym']; $serieData[]=round($r['t']/60,1); }
+$totHorasTraining = round(array_sum($serieData), 1);
 
 // ── Gráfico: capacitaciones por tipo ────────────────────────
 $capTipo = db()->query("SELECT COALESCE(NULLIF(s.tipo_capacitacion,''),'—') tc, COUNT(*) n
@@ -96,9 +97,14 @@ $velManiobra = db()->query("SELECT COALESCE(NULLIF(v.contexto,''),'—') ctx, RO
     FROM speed_records v JOIN operators o ON o.id=v.operator_id WHERE 1=1 $wV GROUP BY ctx ORDER BY t ASC LIMIT 12")->fetchAll();
 
 // ── Gráfico: incidencias por severidad ──────────────────────
-$incSev = db()->query("SELECT severidad, COUNT(*) n FROM incidents i JOIN operators o ON o.id=i.operator_id
+// Se construye a partir del resultado real (no de una lista fija) para que
+// la suma del gráfico siempre coincida con el KPI "Total incidencias".
+$incSev = db()->query("SELECT COALESCE(NULLIF(severidad,''),'SIN DATO') severidad, COUNT(*) n
+    FROM incidents i JOIN operators o ON o.id=i.operator_id
     WHERE 1=1 $wI GROUP BY severidad")->fetchAll();
-$sevMap = array_column($incSev, 'n', 'severidad');
+$SEV_ORDEN = ['LEVE'=>0,'MODERADA'=>1,'GRAVE'=>2,'SIN DATO'=>3];
+usort($incSev, fn($a,$b)=> ($SEV_ORDEN[$a['severidad']] ?? 9) <=> ($SEV_ORDEN[$b['severidad']] ?? 9));
+$SEV_COLOR = ['LEVE'=>'#95a5a6','MODERADA'=>'#F2C94C','GRAVE'=>'#EB5757','SIN DATO'=>'#c9d2df'];
 
 // ── Top 10 operadores por horas ─────────────────────────────
 $topHoras = db()->query("SELECT o.id, o.nombres, ROUND(SUM(h.total_min)/60,1) hrs
@@ -288,11 +294,14 @@ $PAL = ['navy'=>'#163A70','blue'=>'#2D9CDB','green'=>'#27AE60','amber'=>'#F2C94C
 <!-- ── Fila: horas por mes + gauge score ────────────────────── -->
 <div class="row g-3 mb-3">
   <div class="col-lg-8">
-    <div class="card h-100"><div class="card-header"><i class="bi bi-bar-chart-line"></i> Horas de entrenamiento por mes</div>
+    <div class="card chart-card h-100"><div class="card-header d-flex justify-content-between align-items-center gap-2">
+        <span><i class="bi bi-bar-chart-line"></i> Horas de entrenamiento (Training) por mes</span>
+        <span class="badge chart-total-badge">Total: <?= number_format($totHorasTraining,1) ?> h</span>
+      </div>
       <div class="card-body"><canvas id="chHoras" height="110"></canvas></div></div>
   </div>
   <div class="col-lg-4">
-    <div class="card h-100"><div class="card-header"><i class="bi bi-speedometer"></i> Índice de desempeño (score promedio)</div>
+    <div class="card chart-card h-100"><div class="card-header"><i class="bi bi-speedometer"></i> Índice de desempeño (score promedio)</div>
       <div class="card-body d-flex flex-column align-items-center justify-content-center">
         <canvas id="chGauge" style="max-height:190px"></canvas>
       </div></div>
@@ -302,15 +311,18 @@ $PAL = ['navy'=>'#163A70','blue'=>'#2D9CDB','green'=>'#27AE60','amber'=>'#F2C94C
 <!-- ── Fila: tipo capacitación + score por área + incidencias ─ -->
 <div class="row g-3 mb-3">
   <div class="col-lg-4">
-    <div class="card h-100"><div class="card-header"><i class="bi bi-mortarboard"></i> Capacitaciones por tipo</div>
+    <div class="card chart-card h-100"><div class="card-header"><i class="bi bi-mortarboard"></i> Capacitaciones por tipo</div>
       <div class="card-body"><canvas id="chCapTipo" style="max-height:240px"></canvas></div></div>
   </div>
   <div class="col-lg-4">
-    <div class="card h-100"><div class="card-header"><i class="bi bi-diagram-3"></i> Score promedio por área</div>
+    <div class="card chart-card h-100"><div class="card-header"><i class="bi bi-diagram-3"></i> Score promedio por área</div>
       <div class="card-body"><canvas id="chScoreArea" style="max-height:240px"></canvas></div></div>
   </div>
   <div class="col-lg-4">
-    <div class="card h-100"><div class="card-header"><i class="bi bi-exclamation-diamond"></i> Incidencias por severidad</div>
+    <div class="card chart-card h-100"><div class="card-header d-flex justify-content-between align-items-center gap-2">
+        <span><i class="bi bi-exclamation-diamond"></i> Incidencias por severidad</span>
+        <span class="badge chart-total-badge">Total: <?= $totInc ?></span>
+      </div>
       <div class="card-body d-flex justify-content-center align-items-center"><canvas id="chInc" style="max-height:240px"></canvas></div></div>
   </div>
 </div>
@@ -318,11 +330,11 @@ $PAL = ['navy'=>'#163A70','blue'=>'#2D9CDB','green'=>'#27AE60','amber'=>'#F2C94C
 <!-- ── Fila: velocidad por maniobra + tops ──────────────────── -->
 <div class="row g-3 mb-3">
   <div class="col-lg-6">
-    <div class="card h-100"><div class="card-header"><i class="bi bi-stopwatch"></i> Velocidad promedio por tipo de maniobra <small class="text-muted">(menor es mejor)</small></div>
+    <div class="card chart-card h-100"><div class="card-header"><i class="bi bi-stopwatch"></i> Velocidad promedio por tipo de maniobra <small class="text-muted">(menor es mejor)</small></div>
       <div class="card-body"><canvas id="chVel" height="150"></canvas></div></div>
   </div>
   <div class="col-lg-3 col-md-6">
-    <div class="card h-100"><div class="card-header"><i class="bi bi-trophy"></i> Top 10 · Horas</div>
+    <div class="card chart-card h-100"><div class="card-header"><i class="bi bi-trophy"></i> Top 10 · Horas</div>
       <div class="card-body">
         <ol class="mini-rank">
           <?php foreach ($topHoras as $i=>$r): ?>
@@ -334,7 +346,7 @@ $PAL = ['navy'=>'#163A70','blue'=>'#2D9CDB','green'=>'#27AE60','amber'=>'#F2C94C
       </div></div>
   </div>
   <div class="col-lg-3 col-md-6">
-    <div class="card h-100"><div class="card-header"><i class="bi bi-award"></i> Top 10 · Score</div>
+    <div class="card chart-card h-100"><div class="card-header"><i class="bi bi-award"></i> Top 10 · Score</div>
       <div class="card-body">
         <ol class="mini-rank">
           <?php foreach ($topScore as $i=>$r): ?>
@@ -350,7 +362,7 @@ $PAL = ['navy'=>'#163A70','blue'=>'#2D9CDB','green'=>'#27AE60','amber'=>'#F2C94C
 <!-- ── Matriz de Talento 9-Box ──────────────────────────────── -->
 <div class="row g-3">
   <div class="col-12">
-    <div class="card">
+    <div class="card chart-card">
       <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
         <span><i class="bi bi-grid-3x3-gap-fill"></i> Matriz de Talento · 9-Box</span>
         <small class="text-muted">Eje X: score de habilidad &nbsp;·&nbsp; Eje Y: horas de capacitación</small>
@@ -387,13 +399,28 @@ window.addEventListener('DOMContentLoaded', () => {
   const gridColor = 'rgba(22,58,112,.07)';
   Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
   Chart.defaults.color = '#5a6b82';
+  if (window.ChartDataLabels) Chart.register(ChartDataLabels);
+  Chart.defaults.set('plugins.datalabels', { display: false }); // opt-in por gráfico
 
-  // Horas por mes
+  // Formato corto de meses "2026-05" -> "May 2026"
+  const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const fmtMes = (ym) => { const [y,m] = ym.split('-'); return `${MESES[parseInt(m,10)-1]} ${y}`; };
+
+  // Horas de entrenamiento (TRAINING) por mes
   new Chart(chHoras, {
     type: 'bar',
-    data: { labels: <?= json_encode($serieLabels) ?>,
-      datasets: [{ label:'Horas', data: <?= json_encode($serieData) ?>, backgroundColor: PAL.blue, borderRadius: 6, maxBarThickness: 46 }] },
-    options: { plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, grid:{color:gridColor}}, x:{grid:{display:false}} } }
+    data: { labels: <?= json_encode($serieLabels) ?>.map(fmtMes),
+      datasets: [{ label:'Horas de entrenamiento', data: <?= json_encode($serieData) ?>, backgroundColor: PAL.blue, borderRadius: 8, maxBarThickness: 46 }] },
+    options: {
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{ label:(c)=> ` ${c.formattedValue} h` } },
+        datalabels:{ display:true, anchor:'end', align:'top', color:'#163A70', font:{weight:700, size:11},
+          formatter:(v)=> v > 0 ? v.toFixed(1) : '' }
+      },
+      layout:{ padding:{ top:18 } },
+      scales:{ y:{ beginAtZero:true, grid:{color:gridColor}, title:{display:true, text:'Horas'} }, x:{ grid:{display:false} } }
+    }
   });
 
   // Gauge score promedio (semicírculo)
@@ -418,8 +445,17 @@ window.addEventListener('DOMContentLoaded', () => {
     type: 'doughnut',
     data: { labels: <?= json_encode(array_column($capTipo,'tc')) ?>,
       datasets:[{ data: <?= json_encode(array_map('intval', array_column($capTipo,'n'))) ?>,
-        backgroundColor:[PAL.navy,PAL.blue,PAL.green,PAL.amber,PAL.orange,PAL.red,PAL.mint,'#9b59b6','#95a5a6'] }] },
-    options: { plugins:{legend:{position:'bottom', labels:{boxWidth:12, font:{size:11}}}} }
+        backgroundColor:[PAL.navy,PAL.blue,PAL.green,PAL.amber,PAL.orange,PAL.red,PAL.mint,'#9b59b6','#95a5a6'],
+        borderColor:'#fff', borderWidth:2 }] },
+    options: {
+      cutout:'62%',
+      plugins:{
+        legend:{position:'bottom', labels:{boxWidth:12, padding:14, font:{size:11}, usePointStyle:true, pointStyle:'circle'}},
+        tooltip:{ callbacks:{ label:(c)=>{ const tot=c.dataset.data.reduce((a,b)=>a+b,0); const pct=tot? (100*c.raw/tot).toFixed(1):0; return ` ${c.label}: ${c.raw} (${pct}%)`; } } },
+        datalabels:{ display:true, color:'#fff', font:{weight:700, size:11},
+          formatter:(v,ctx)=>{ const tot=ctx.dataset.data.reduce((a,b)=>a+b,0); const pct= tot? 100*v/tot : 0; return pct>=6 ? pct.toFixed(0)+'%' : ''; } }
+      }
+    }
   });
 
   // Score por área
@@ -428,17 +464,35 @@ window.addEventListener('DOMContentLoaded', () => {
     data: { labels: <?= json_encode(array_column($scoreArea,'area')) ?>,
       datasets:[{ label:'Score', data: <?= json_encode(array_map('floatval', array_column($scoreArea,'prom'))) ?>,
         backgroundColor: <?= json_encode(array_map(fn($r)=> ((float)$r['prom']>=UMBRAL_OPTIMO?$PAL['green']:((float)$r['prom']>=UMBRAL_REGULAR?$PAL['amber']:$PAL['red'])), $scoreArea)) ?>,
-        borderRadius:6, maxBarThickness:60 }] },
-    options: { plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, max:100, grid:{color:gridColor}}, x:{grid:{display:false}} } }
+        borderRadius:8, maxBarThickness:60 }] },
+    options: {
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{ label:(c)=> ` ${c.formattedValue}%` } },
+        datalabels:{ display:true, anchor:'end', align:'top', color:'#163A70', font:{weight:700, size:12},
+          formatter:(v)=> v.toFixed(1)+'%' }
+      },
+      layout:{ padding:{ top:18 } },
+      scales:{ y:{beginAtZero:true, max:100, grid:{color:gridColor}, title:{display:true, text:'Score (%)'}}, x:{grid:{display:false}} }
+    }
   });
 
-  // Incidencias por severidad
+  // Incidencias por severidad (a partir de los datos reales; la suma coincide con el KPI)
+  const incLabels = <?= json_encode(array_column($incSev,'severidad')) ?>;
+  const incData   = <?= json_encode(array_map('intval', array_column($incSev,'n'))) ?>;
+  const incColors = <?= json_encode(array_map(fn($r)=>$SEV_COLOR[$r['severidad']] ?? '#c9d2df', $incSev)) ?>;
   new Chart(chInc, {
     type: 'pie',
-    data: { labels:['LEVE','MODERADA','GRAVE'],
-      datasets:[{ data:[<?= (int)($sevMap['LEVE']??0) ?>,<?= (int)($sevMap['MODERADA']??0) ?>,<?= (int)($sevMap['GRAVE']??0) ?>],
-        backgroundColor:['#95a5a6', PAL.amber, PAL.red] }] },
-    options: { plugins:{legend:{position:'bottom', labels:{boxWidth:12, font:{size:11}}}} }
+    data: { labels: incLabels,
+      datasets:[{ data: incData, backgroundColor: incColors, borderColor:'#fff', borderWidth:2 }] },
+    options: {
+      plugins:{
+        legend:{position:'bottom', labels:{boxWidth:12, padding:14, font:{size:11}, usePointStyle:true, pointStyle:'circle'}},
+        tooltip:{ callbacks:{ label:(c)=>{ const tot=c.dataset.data.reduce((a,b)=>a+b,0); const pct=tot? (100*c.raw/tot).toFixed(1):0; return ` ${c.label}: ${c.raw} (${pct}%)`; } } },
+        datalabels:{ display:true, color:'#fff', font:{weight:700, size:12},
+          formatter:(v,ctx)=>{ if(!v) return ''; const tot=ctx.dataset.data.reduce((a,b)=>a+b,0); const pct= tot? 100*v/tot : 0; return `${v} (${pct.toFixed(0)}%)`; } }
+      }
+    }
   });
 
   // Velocidad por maniobra (barra horizontal)
@@ -446,9 +500,18 @@ window.addEventListener('DOMContentLoaded', () => {
     type:'bar',
     data:{ labels: <?= json_encode(array_column($velManiobra,'ctx')) ?>,
       datasets:[{ label:'Segundos prom.', data: <?= json_encode(array_map('intval', array_column($velManiobra,'t'))) ?>,
-        backgroundColor: PAL.navy, borderRadius:5, maxBarThickness:26 }] },
-    options:{ indexAxis:'y', plugins:{legend:{display:false}},
-      scales:{ x:{beginAtZero:true, grid:{color:gridColor}}, y:{grid:{display:false}} } }
+        backgroundColor: PAL.navy, borderRadius:6, maxBarThickness:26 }] },
+    options:{
+      indexAxis:'y',
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{ label:(c)=> ` ${c.formattedValue} s` } },
+        datalabels:{ display:true, anchor:'end', align:'end', color:'#163A70', font:{weight:700, size:11},
+          formatter:(v)=> v+'s' }
+      },
+      layout:{ padding:{ right:26 } },
+      scales:{ x:{beginAtZero:true, grid:{color:gridColor}, title:{display:true, text:'Segundos (menor es mejor)'}}, y:{grid:{display:false}} }
+    }
   });
 
   // 9-Box (scatter con zonas)

@@ -709,6 +709,32 @@ main.page { padding: 24px 28px; flex: 1; max-width: 1600px; margin: 0 auto; widt
 .exec-kpi .ek-value { margin-top: .38rem; }
 .exec-kpi .ek-sub { min-height: .9rem; margin-top: .35rem; color: #718096; }
 
+.chart-card {
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: box-shadow .18s ease, transform .18s ease;
+}
+.chart-card:hover { box-shadow: 0 10px 22px rgba(16,85,154,.13); transform: translateY(-1px); }
+.chart-card .card-header {
+    background: #fbfdff;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0 !important;
+    font-size: .88rem;
+    padding: .75rem 1rem;
+}
+.chart-card .card-header i { color: var(--c-blue); margin-right: 2px; }
+.chart-card .card-body { padding: 1.1rem; }
+.chart-total-badge {
+    background: var(--cosco-bg);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: .72rem;
+    padding: .35rem .65rem;
+    border-radius: .5rem;
+    border: 1px solid var(--border);
+}
+
 @media (max-width: 768px) {
     .dashboard-intro { padding: .9rem; align-items: stretch !important; }
     .dashboard-actions { width: 100%; justify-content: flex-start; }
