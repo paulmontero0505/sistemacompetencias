@@ -151,6 +151,12 @@ function db(): PDO {
             $pdo->prepare("INSERT INTO schema_migrations (name) VALUES ('seed_operator_grua_estado')")->execute();
         }
 
+        if (!in_array('incident_estado_cerrado', $applied, true)) {
+            // Amplía el estado de incidencias para aceptar el cierre sin declaración (CERRADO).
+            $pdo->exec("ALTER TABLE incidents MODIFY COLUMN estado ENUM('ABIERTA','EN PROCESO','CERRADA','CERRADO') NOT NULL DEFAULT 'EN PROCESO'");
+            $pdo->prepare("INSERT INTO schema_migrations (name) VALUES ('incident_estado_cerrado')")->execute();
+        }
+
         if (!in_array('add_wheel_loader_area', $applied, true)) {
             // Amplía las áreas existentes sin perder los registros históricos.
             foreach (['hours_records', 'skill_records', 'performance_records', 'speed_records', 'incidents', 'custom_lugares', 'operator_grua_estado'] as $table) {
