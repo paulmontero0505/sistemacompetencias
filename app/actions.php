@@ -569,10 +569,10 @@ function handle_action(string $action): void {
         // ---- Incidencias ----
         case 'incident_save': {
             $id = (int)($_POST['id'] ?? 0);
-            // severidad, acciones y estado ya no se ingresan en el formulario; usamos defaults
             $severidad = trim($_POST['severidad'] ?? 'LEVE');   // fallback si se edita un registro antiguo
             $acciones  = trim($_POST['acciones']  ?? '');
-            $estado    = trim($_POST['estado']    ?? 'ABIERTA');
+            // Por defecto cuando se genera la incidencia, el estado es EN PROCESO
+            $estado    = 'EN PROCESO';
             $data = [(int)$_POST['operator_id'], $_POST['area'], $_POST['fecha'], trim($_POST['equipo'] ?? ''),
                      $_POST['tipo'], $severidad, trim($_POST['descripcion'] ?? ''),
                      $acciones, $estado, trim($_POST['reportado_por'] ?? $u['nombre'])];
@@ -657,10 +657,14 @@ function handle_action(string $action): void {
                 }
             }
 
-            // Persistir referencias
-            db()->prepare("UPDATE incidents SET fotos=?, declaracion=? WHERE id=?")->execute([
+            // Determinar estado final: CERRADO si tiene declaración adjunta, sino EN PROCESO
+            $finalEstado = ($decl && !empty($decl['id']) && !empty($decl['url'])) ? 'CERRADO' : 'EN PROCESO';
+
+            // Persistir referencias y estado final
+            db()->prepare("UPDATE incidents SET fotos=?, declaracion=?, estado=? WHERE id=?")->execute([
                 json_encode(array_values($fotos), JSON_UNESCAPED_UNICODE),
                 $decl ? json_encode($decl, JSON_UNESCAPED_UNICODE) : null,
+                $finalEstado,
                 $id,
             ]);
             if ($warn) flash(implode(' ', $warn), 'danger');

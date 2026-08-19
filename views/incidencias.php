@@ -12,11 +12,13 @@ $todosLosTipos = array_unique(array_merge(array_filter($todosLosTipos, fn($t) =>
 $totalRegistros = count($rows);
 $totalGrave = 0;
 $totalModerada = 0;
-$totalAbiertas = 0;
+$totalEnProceso = 0;
+$totalCerradas = 0;
 foreach ($rows as $r) {
     if ($r['severidad'] === 'GRAVE') $totalGrave++;
     if ($r['severidad'] === 'MODERADA') $totalModerada++;
-    if ($r['estado'] === 'ABIERTA') $totalAbiertas++;
+    if ($r['estado'] === 'EN PROCESO' || $r['estado'] === 'ABIERTA') $totalEnProceso++;
+    if ($r['estado'] === 'CERRADO' || $r['estado'] === 'CERRADA') $totalCerradas++;
 }
 ?>
 
@@ -64,10 +66,10 @@ foreach ($rows as $r) {
     </div>
   </div>
   <div class="col-6 col-lg-3">
-    <div class="card h-100 border shadow-sm position-relative overflow-hidden kpi-card" style="border-left: 5px solid #0dcaf0 !important; border-radius: 14px;">
+    <div class="card h-100 border shadow-sm position-relative overflow-hidden kpi-card" style="border-left: 5px solid #ffc107 !important; border-radius: 14px;">
       <div class="card-body p-3">
-        <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em;">ESTADO ABIERTO</div>
-        <div class="fs-2 fw-extrabold mt-1 text-info-emphasis" id="js-stat-abiertas"><?= $totalAbiertas ?></div>
+        <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em;">EN PROCESO</div>
+        <div class="fs-2 fw-extrabold mt-1 text-warning-emphasis" id="js-stat-enproceso"><?= $totalEnProceso ?></div>
       </div>
     </div>
   </div>
@@ -97,9 +99,8 @@ foreach ($rows as $r) {
       <span class="fw-semibold text-uppercase" style="font-size: 0.72rem;">Estado:</span>
       <div class="btn-group btn-group-xs" role="group" id="js-estado-filter">
         <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 active" data-estado="TODAS" style="font-size: 0.75rem;">Todos</button>
-        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" data-estado="ABIERTA" style="font-size: 0.75rem;">Abiertas</button>
         <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" data-estado="EN PROCESO" style="font-size: 0.75rem;">En Proceso</button>
-        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" data-estado="CERRADA" style="font-size: 0.75rem;">Cerradas</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" data-estado="CERRADO" style="font-size: 0.75rem;">Cerrados</button>
       </div>
     </div>
   </div>
@@ -180,12 +181,10 @@ foreach ($rows as $r) {
           <td class="py-2" style="font-size: 0.8rem; color: #475569;"><?= h($r['fecha']) ?></td>
           <td class="py-2" style="font-size: 0.8rem; color: #475569;"><?= h($r['reportado_por'] ?: '—') ?></td>
           <td class="py-2">
-            <?php if ($r['estado'] === 'ABIERTA'): ?>
-              <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.7rem;">ABIERTA</span>
-            <?php elseif ($r['estado'] === 'EN PROCESO'): ?>
-              <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 0.7rem; color: #fd7e14 !important;">EN PROCESO</span>
+            <?php if ($r['estado'] === 'CERRADO' || $r['estado'] === 'CERRADA'): ?>
+              <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.7rem;">CERRADO</span>
             <?php else: ?>
-              <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.7rem;">CERRADA</span>
+              <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 0.7rem; color: #d97706 !important;">EN PROCESO</span>
             <?php endif; ?>
           </td>
           <td class="pe-3 py-2 text-end text-nowrap">
@@ -198,9 +197,8 @@ foreach ($rows as $r) {
                   'Equipo' => $r['equipo'],
                   'Tipo' => $r['tipo'],
                   'Severidad' => $r['severidad'],
-                  'Estado' => $r['estado'],
+                  'Estado' => ($r['estado'] === 'CERRADO' || $r['estado'] === 'CERRADA') ? 'CERRADO' : 'EN PROCESO',
                   'Descripción' => $r['descripcion'],
-                  'Acciones correctivas' => $r['acciones'],
                   'Reportado por' => $r['reportado_por'],
               ])) ?>'
               data-ver-att='<?= h(json_encode(['fotos' => $rFotos, 'declaracion' => $rDecl])) ?>'><i class="bi bi-eye"></i> Ver</button>
@@ -340,18 +338,21 @@ foreach ($rows as $r) {
 
 <!-- Modal: Ver Registro -->
 <div class="modal fade" id="modalVerIncidencia" tabindex="-1" data-bs-backdrop="static">
-  <div class="modal-dialog" style="max-width: 500px;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-eye"></i> Detalle de la Incidencia</h5>
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 650px;">
+    <div class="modal-content shadow-lg border-0" style="border-radius: 16px; overflow: hidden;">
+      <div class="modal-header bg-light border-bottom py-3">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 1.1rem;">
+          <i class="bi bi-file-earmark-text-fill text-primary"></i> Detalle de la Incidencia
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body p-0">
-        <table class="table table-striped table-sm mb-0" id="js-ver-body"></table>
-        <div id="js-ver-att" class="p-3 border-top"></div>
+      <div class="modal-body p-4">
+        <table class="table table-borderless table-sm mb-3" id="js-ver-body"></table>
+        
+        <div id="js-ver-att" class="pt-3 border-top"></div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+      <div class="modal-footer bg-light border-top py-2 px-4">
+        <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -362,21 +363,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const statTotal = document.getElementById('js-stat-total');
   const statGrave = document.getElementById('js-stat-grave');
   const statModerada = document.getElementById('js-stat-moderada');
-  const statAbiertas = document.getElementById('js-stat-abiertas');
+  const statEnProceso = document.getElementById('js-stat-enproceso');
 
   const recalcStats = () => {
-    let total = 0, grave = 0, moderada = 0, abiertas = 0;
+    let total = 0, grave = 0, moderada = 0, enProceso = 0;
     document.querySelectorAll('table.js-filterable tbody tr').forEach(tr => {
       if (tr.style.display === 'none' || !tr.dataset.severidad) return;
       total++;
       if (tr.dataset.severidad === 'GRAVE') grave++;
       if (tr.dataset.severidad === 'MODERADA') moderada++;
-      if (tr.dataset.estado === 'ABIERTA') abiertas++;
+      const est = tr.dataset.estado;
+      if (est === 'EN PROCESO' || est === 'ABIERTA') enProceso++;
     });
     if (statTotal) statTotal.textContent = total;
     if (statGrave) statGrave.textContent = grave;
     if (statModerada) statModerada.textContent = moderada;
-    if (statAbiertas) statAbiertas.textContent = abiertas;
+    if (statEnProceso) statEnProceso.textContent = enProceso;
   };
 
   // Filters by Severidad and Estado
@@ -395,7 +397,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tr.id === 'js-empty-row') return;
       
       const matchesSev = (activeSev === 'TODAS' || tr.dataset.severidad === activeSev);
-      const matchesEst = (activeEst === 'TODAS' || tr.dataset.estado === activeEst);
+      let matchesEst = false;
+      if (activeEst === 'TODAS') {
+        matchesEst = true;
+      } else if (activeEst === 'EN PROCESO') {
+        matchesEst = (tr.dataset.estado === 'EN PROCESO' || tr.dataset.estado === 'ABIERTA');
+      } else if (activeEst === 'CERRADO') {
+        matchesEst = (tr.dataset.estado === 'CERRADO' || tr.dataset.estado === 'CERRADA');
+      }
       
       const text = tr.textContent.toLowerCase();
       const matchesText = !searchText || text.includes(searchText);
@@ -454,23 +463,26 @@ document.addEventListener('DOMContentLoaded', () => {
       const body = document.getElementById('js-ver-body');
       body.innerHTML = Object.entries(data).map(([k, v]) => {
         let val = v || '—';
-        if (k === 'Estado' || k === 'Severidad') {
+        if (k === 'Estado') {
+          const isClosed = (v === 'CERRADO' || v === 'CERRADA');
+          const cls = isClosed ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+          val = `<span class="badge rounded-pill ${cls} px-2 py-1" style="font-size:0.75rem;">${isClosed ? 'CERRADO' : 'EN PROCESO'}</span>`;
+        } else if (k === 'Severidad') {
           const map = {
-            'ABIERTA': 'bg-danger-subtle text-danger border border-danger-subtle',
-            'EN PROCESO': 'bg-warning-subtle text-warning border border-warning-subtle',
-            'CERRADA': 'bg-success-subtle text-success border border-success-subtle',
             'LEVE': 'bg-success-subtle text-success border border-success-subtle',
             'MODERADA': 'bg-warning-subtle text-warning border border-warning-subtle',
             'GRAVE': 'bg-danger-subtle text-danger border border-danger-subtle'
           };
           const cls = map[v] ?? 'bg-secondary-subtle text-secondary';
-          let customStyle = '';
-          if (v === 'MODERADA' || v === 'EN PROCESO') {
-              customStyle = 'style="color:#fd7e14 !important;"';
-          }
-          val = `<span class="badge rounded-pill ${cls}" ${customStyle}>${v}</span>`;
+          let customStyle = (v === 'MODERADA') ? 'style="color:#fd7e14 !important;"' : '';
+          val = `<span class="badge rounded-pill ${cls} px-2 py-1" ${customStyle} style="font-size:0.75rem;">${v}</span>`;
+        } else if (k === 'Descripción') {
+          val = `<div class="p-2 bg-light rounded text-dark" style="font-size:0.85rem; line-height:1.4; white-space:pre-line;">${v}</div>`;
         }
-        return `<tr style="border-bottom:1px solid #f1f5f9;"><th class="text-muted small ps-3 py-2" style="width:40%; font-weight:600;">${k}</th><td class="pe-3 py-2">${val}</td></tr>`;
+        return `<tr style="border-bottom:1px solid #f1f5f9;">
+                  <th class="text-muted small ps-2 py-2 align-top" style="width:35%; font-weight:600;">${k}</th>
+                  <td class="pe-2 py-2 align-middle" style="font-size:0.88rem;">${val}</td>
+                </tr>`;
       }).join('');
 
       // Adjuntos (Google Drive)
@@ -478,17 +490,40 @@ document.addEventListener('DOMContentLoaded', () => {
       try { att = JSON.parse(ev.relatedTarget.dataset.verAtt || '{}'); } catch (e) {}
       const attBox = document.getElementById('js-ver-att');
       let ah = '';
+      
       if (att.fotos && att.fotos.length) {
-        ah += '<div class="fw-semibold text-muted small text-uppercase mb-2">Evidencia fotográfica</div><div class="d-flex flex-wrap gap-2 mb-3">';
+        ah += '<div class="fw-semibold text-dark small text-uppercase mb-2"><i class="bi bi-images text-primary me-1"></i> Evidencia fotográfica</div>';
+        ah += '<div class="d-flex flex-wrap gap-2 mb-3">';
         att.fotos.forEach(f => {
-          ah += `<a href="${f.url}" target="_blank" rel="noopener"><img src="${f.thumb || f.url}" style="width:92px;height:92px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"></a>`;
+          ah += `<a href="${f.url}" target="_blank" rel="noopener" class="d-inline-block border rounded overflow-hidden shadow-sm hover-shadow" title="Ver foto en tamaño completo">
+                   <img src="${f.thumb || f.url}" style="width:100px;height:100px;object-fit:cover;display:block;">
+                 </a>`;
         });
         ah += '</div>';
       }
-      if (att.declaracion && att.declaracion.id) {
-        ah += `<a href="${att.declaracion.url}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"><i class="bi bi-file-earmark-text"></i> Ver declaración</a>`;
+
+      if (att.declaracion && att.declaracion.url) {
+        const docName = att.declaracion.name || 'Documento de Declaración';
+        ah += '<div class="fw-semibold text-dark small text-uppercase mb-2"><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Declaración adjunta</div>';
+        ah += `<div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between gap-3 shadow-sm">
+                 <div class="d-flex align-items-center gap-2 text-truncate">
+                   <i class="bi bi-file-earmark-text fs-3 text-primary"></i>
+                   <div class="text-truncate">
+                     <div class="fw-bold text-dark text-truncate" style="font-size: 0.88rem;">${docName}</div>
+                     <div class="text-muted small" style="font-size: 0.75rem;">Documento oficial cargado</div>
+                   </div>
+                 </div>
+                 <a href="${att.declaracion.url}" target="_blank" rel="noopener" class="btn btn-primary btn-sm px-3 flex-shrink-0 fw-semibold d-flex align-items-center gap-1">
+                   <i class="bi bi-box-arrow-up-right"></i> Abrir documento
+                 </a>
+               </div>`;
       }
-      attBox.innerHTML = ah || '<div class="text-muted small">Sin archivos adjuntos.</div>';
+
+      if (!ah) {
+        ah = '<div class="text-muted small italic p-2 bg-light rounded text-center"><i class="bi bi-info-circle me-1"></i> No hay fotos ni declaración adjunta a esta incidencia.</div>';
+      }
+      
+      attBox.innerHTML = ah;
     });
   }
 
