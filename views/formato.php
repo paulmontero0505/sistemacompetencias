@@ -195,7 +195,7 @@ $isPrint = isset($_GET['print']);
 
   <?php elseif ($snap):
     // ── Consolidado HÍBRIDO: promedio de los últimos registros por lugar de instrucción ──
-    $UAPTO = ARMG_UMBRAL_APTO; // aprobado desde 70%
+    $UAPTO = ARMG_UMBRAL_APTO; // aprobado desde 75%
     $esEscala = $cfgF['skills_tipo'] === 'escala';
     $esTresNiveles = $cfgF['skills_tipo'] === 'trinivel';
     $grupos = array_keys($cfgF['skills_grupos']);

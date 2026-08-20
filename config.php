@@ -36,12 +36,12 @@ define('DRIVE_MAX_DOC_MB', 15);
 define('UMBRAL_OPTIMO', 80);   // >= 80  => OPTIMO / APTO
 define('UMBRAL_REGULAR', 50);  // >= 50  => REGULAR
 
-// Habilidades: nivel 0 <50 | nivel 1 50-69.9 | nivel 2 70-84.9 | nivel 3 >=85.
+// Habilidades: nivel 0 <75 | nivel 1 75-85.9 | nivel 2 86-95.9 | nivel 3 >=96.
 // Prefijos por área: ARMG=C, QC=A, PC=B y Wheel Loader=D.
-define('ARMG_UMBRAL_C1', 50);
-define('ARMG_UMBRAL_C2', 70);
-define('ARMG_UMBRAL_C3', 85);
-define('ARMG_UMBRAL_APTO', 70);
+define('ARMG_UMBRAL_C1', 75);
+define('ARMG_UMBRAL_C2', 86);
+define('ARMG_UMBRAL_C3', 96);
+define('ARMG_UMBRAL_APTO', 75);
 define('SKILL_STATUS_PREFIX', ['ARMG' => 'C', 'QC' => 'A', 'PC' => 'B', 'WL' => 'D']);
 
 // == Definición de áreas y sus formularios ==

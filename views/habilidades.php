@@ -83,7 +83,7 @@ foreach ($rows as $r) $operadoresSet[$r['operator_id']] = true;
     <div class="stat-label">Score promedio</div>
     <div class="stat-value text-success" id="js-stat-score"><?= number_format($promedioScore, 1) ?>%</div></div></div>
   <div class="col-6 col-lg-3"><div class="stat-tile">
-    <div class="stat-label">Aptos (≥70%)</div>
+    <div class="stat-label">Aptos (≥75%)</div>
     <div class="stat-value text-success" id="js-stat-aptos"><?= $totalAptos ?></div></div></div>
   <div class="col-6 col-lg-3"><div class="stat-tile">
     <div class="stat-label">Operadores evaluados</div>
@@ -95,14 +95,14 @@ foreach ($rows as $r) $operadoresSet[$r['operator_id']] = true;
     <span class="skill-level-legend__icon"><i class="bi bi-info-circle"></i></span>
     <div>
       <h4 id="skill-levels-title">Niveles de competencia <?= h($AREA_ACTUAL) ?></h4>
-      <p>La aptitud se obtiene desde <strong>70%</strong> (<?= h($skillPrefix) ?>2 o <?= h($skillPrefix) ?>3).</p>
+      <p>La aptitud se obtiene desde <strong>75%</strong> (<?= h($skillPrefix) ?>1, <?= h($skillPrefix) ?>2 o <?= h($skillPrefix) ?>3).</p>
     </div>
   </div>
   <div class="skill-level-legend__levels">
-    <div class="skill-level skill-level--c0"><span class="skill-level__code"><?= h($skillPrefix) ?>0</span><div><strong>Nivel bajo</strong><small>Desempeño muy por debajo de lo esperado · &lt;50%</small></div></div>
-    <div class="skill-level skill-level--c1"><span class="skill-level__code"><?= h($skillPrefix) ?>1</span><div><strong>Nivel básico</strong><small>Desempeño por debajo de lo esperado · 50–69.9%</small></div></div>
-    <div class="skill-level skill-level--c2"><span class="skill-level__code"><?= h($skillPrefix) ?>2</span><div><strong>Nivel promedio</strong><small>Desempeño superior al promedio · 70–84.9% · Apto</small></div></div>
-    <div class="skill-level skill-level--c3"><span class="skill-level__code"><?= h($skillPrefix) ?>3</span><div><strong>Nivel avanzado</strong><small>Alta competencia y dominio operativo · ≥85% · Apto</small></div></div>
+    <div class="skill-level skill-level--c0"><span class="skill-level__code"><?= h($skillPrefix) ?>0</span><div><strong>Nivel bajo</strong><small>Desempeño por debajo de lo esperado · &lt;75%</small></div></div>
+    <div class="skill-level skill-level--c1"><span class="skill-level__code"><?= h($skillPrefix) ?>1</span><div><strong>Nivel básico</strong><small>Desempeño esperado · 75–85.9% · Apto</small></div></div>
+    <div class="skill-level skill-level--c2"><span class="skill-level__code"><?= h($skillPrefix) ?>2</span><div><strong>Nivel promedio</strong><small>Desempeño superior al esperado · 86–95.9% · Apto</small></div></div>
+    <div class="skill-level skill-level--c3"><span class="skill-level__code"><?= h($skillPrefix) ?>3</span><div><strong>Nivel avanzado</strong><small>Alta competencia y dominio operativo · ≥96% · Apto</small></div></div>
   </div>
 </section>
 
