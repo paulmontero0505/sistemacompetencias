@@ -68,9 +68,11 @@ foreach ($rows as $r) $operadoresSet[$r['operator_id']] = true;
       <a href="?action=skill_export&area=<?= h($AREA_ACTUAL) ?>" class="btn btn-outline-light btn-sm fw-semibold">
         <i class="bi bi-file-earmark-excel"></i> Exportar Excel
       </a>
+      <?php if ($user['rol'] !== 'visita'): ?>
       <button type="button" class="btn btn-light btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalNuevaEval">
         <i class="bi bi-plus-circle"></i> Nueva evaluación
       </button>
+      <?php endif; ?>
     </div>
   </div>
 </div>
@@ -134,6 +136,7 @@ foreach ($rows as $r) $operadoresSet[$r['operator_id']] = true;
           <td class="small"><?= h($r['evaluador']) ?></td>
           <td class="small text-muted" style="max-width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?= h($r['comentarios']) ?>"><?= h($r['comentarios']) ?></td>
           <td class="text-end text-nowrap">
+            <?php if ($user['rol'] !== 'visita'): ?>
             <button type="button" class="btn btn-sm btn-outline-secondary py-0 me-1" title="Editar" onclick="editSkill(this)" data-eval="<?= h(json_encode($r)) ?>">
               <i class="bi bi-pencil"></i>
             </button>
@@ -141,6 +144,7 @@ foreach ($rows as $r) $operadoresSet[$r['operator_id']] = true;
               <input type="hidden" name="id" value="<?= $r['id'] ?>">
               <button type="submit" class="btn btn-sm btn-outline-danger py-0" title="Eliminar"><i class="bi bi-trash"></i></button>
             </form>
+            <?php endif; ?>
           </td>
         </tr>
       <?php endforeach; if (!$rows): ?>

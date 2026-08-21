@@ -31,6 +31,12 @@ function handle_action(string $action): void {
 
     if (!$u) redirect('?page=login');
 
+    // El rol Visita solo puede ver e imprimir; no puede guardar, eliminar ni importar nada.
+    if ($u['rol'] === 'visita' && $action !== 'skill_export') {
+        flash('Tu rol de Visita no tiene permiso para realizar esta acción.', 'danger');
+        redirect('?page=dashboard');
+    }
+
     // Bitácora general de cambios realizados en módulos operativos.
     $auditActions = [
         'operador_save' => 'Operadores', 'operador_delete' => 'Operadores', 'operador_gruas_bulk_save' => 'Operadores',

@@ -22,6 +22,7 @@ $ops = db()->query("SELECT o.* FROM operators o ORDER BY o.nombres")->fetchAll()
       <input class="form-check-input" type="checkbox" id="js-show-cesados">
       <label class="form-check-label small" for="js-show-cesados">Mostrar inactivos</label>
     </div>
+    <?php if ($user['rol'] !== 'visita'): ?>
     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mGruasBulk">
       <i class="bi bi-diagram-3"></i> Asignar grúas en bloque
     </button>
@@ -29,6 +30,7 @@ $ops = db()->query("SELECT o.* FROM operators o ORDER BY o.nombres")->fetchAll()
             onclick="document.querySelector('#mOperador form').reset(); document.querySelector('#mOperador [name=id]').value=''; document.querySelectorAll('#mOperador [name=\'tipos_grua[]\']').forEach(c=>c.checked=false);">
       <i class="bi bi-plus-lg"></i> Nuevo operador
     </button>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -96,10 +98,12 @@ $ops = db()->query("SELECT o.* FROM operators o ORDER BY o.nombres")->fetchAll()
       <td class="small"><?= h($o['fecha_ingreso']) ?></td>
       <td class="text-center"><?= $o['activo'] ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>' ?></td>
       <td class="text-end text-nowrap">
+        <?php if ($user['rol'] !== 'visita'): ?>
         <button class="btn btn-sm btn-outline-primary js-edit-op" data-bs-toggle="modal" data-bs-target="#mOperador"
           data-fill-form='<?= h(json_encode(['id'=>$o['id'],'codigo'=>$o['codigo'],'dni'=>$o['dni'],'nombres'=>$o['nombres'],'cargo'=>$o['cargo'],'lugar'=>$o['lugar'],'fecha_ingreso'=>$o['fecha_ingreso'],'estado_laboral'=>$o['activo']?'ACTIVO':'CESADO'])) ?>'
           data-gruas='<?= h(json_encode($gruas)) ?>'
           data-target="#mOperador"><i class="bi bi-pencil"></i></button>
+        <?php endif; ?>
         <?php if (is_admin()): ?>
         <form method="post" action="?action=operador_delete" class="d-inline" onsubmit="return confirm('¿Eliminar operador y todos sus registros?')">
           <input type="hidden" name="id" value="<?= $o['id'] ?>">

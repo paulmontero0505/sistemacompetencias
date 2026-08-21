@@ -66,11 +66,13 @@ foreach ($rows as $r) {
       <h3 class="mb-1 mt-2">Horas de entrenamiento — <?= h($cfg['nombre']) ?></h3>
       <p class="mb-0 opacity-75">Registro de horas de inducción e instrucción por operador.</p>
     </div>
+    <?php if ($user['rol'] !== 'visita'): ?>
     <div class="d-flex gap-2">
       <button type="button" class="btn btn-light btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalNuevoHoras">
         <i class="bi bi-plus-circle"></i> Nuevo registro
       </button>
     </div>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -137,6 +139,7 @@ foreach ($rows as $r) {
                   'Detalle' => implode(', ', array_map(fn($k, $v) => "$k: " . fmt_minutes((int)$v), array_keys($det), $det)),
                   'Total' => fmt_minutes((int)$r['total_min']), 'Instructor' => $r['instructor'], 'Observación' => $r['observacion'],
               ])) ?>'><i class="bi bi-eye"></i></button>
+            <?php if ($user['rol'] !== 'visita'): ?>
             <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="modal" data-bs-target="#modalEditarHoras" title="Editar"
               data-edit='<?= h(json_encode([
                   'id' => $r['id'], 'operador' => $r['nombres'], 'fecha' => $r['fecha'], 'tipo_preparacion' => $r['tipo_preparacion'],
@@ -147,6 +150,7 @@ foreach ($rows as $r) {
               <input type="hidden" name="id" value="<?= $r['id'] ?>">
               <button class="btn btn-sm btn-outline-danger py-0" title="Eliminar"><i class="bi bi-trash"></i></button>
             </form>
+            <?php endif; ?>
           </td>
         </tr>
       <?php endforeach; if (!$rows): ?>

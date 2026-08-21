@@ -23,26 +23,28 @@ foreach ($rows as $r) {
 ?>
 
 <!-- Cabecera Hero Banner -->
-<div class="banner-head mb-3" style="background: linear-gradient(135deg, #0B3D73 0%, #1565C0 100%) !important;">
+<div class="banner-head mb-3">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
       <span class="banner-badge bg-white-20 text-white mb-2">CONTROL DE CAMPO · INCIDENCIAS</span>
       <h3 class="mb-1 mt-2 text-white">Registro y bitácora de incidencias</h3>
       <p class="mb-0 text-white-80">Monitoreo y seguimiento de puntos a mejorar del personal con clasificación por nivel de impacto, turno operativo y evidencias adjuntas.</p>
     </div>
+    <?php if ($user['rol'] !== 'visita'): ?>
     <div>
       <button type="button" class="btn btn-light btn-cosco-light" data-bs-toggle="modal" data-bs-target="#mInc"
               onclick="document.querySelector('#mInc form').reset(); document.querySelector('#mInc [name=id]').value='';">
         <i class="bi bi-plus-circle"></i> Registrar incidencia
       </button>
     </div>
+    <?php endif; ?>
   </div>
 </div>
 
 <!-- Tarjetas KPI -->
 <div class="row g-3 mb-3">
   <div class="col-6 col-lg-3">
-    <div class="card h-100 border shadow-sm position-relative overflow-hidden kpi-card" style="border-left: 5px solid #0B3D73 !important; border-radius: 14px;">
+    <div class="card h-100 border shadow-sm position-relative overflow-hidden kpi-card" style="border-left: 5px solid #065F46 !important; border-radius: 14px;">
       <div class="card-body p-3">
         <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em;">TOTAL REGISTRADAS</div>
         <div class="fs-2 fw-extrabold mt-1 text-primary" id="js-stat-total"><?= $totalRegistros ?></div>
@@ -139,7 +141,7 @@ foreach ($rows as $r) {
           <td class="ps-3 py-2">
             <div class="d-flex align-items-center gap-2">
               <div class="avatar-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" 
-                   style="width: 34px; height: 34px; border-radius: 50%; font-size: 0.78rem; background: linear-gradient(135deg, #10559A 0%, #0B3D73 100%);">
+                   style="width: 34px; height: 34px; border-radius: 50%; font-size: 0.78rem; background: linear-gradient(135deg, #10B981 0%, #065F46 100%);">
                 <?= $initials ?>
               </div>
               <div>
@@ -202,6 +204,7 @@ foreach ($rows as $r) {
                   'Reportado por' => $r['reportado_por'],
               ])) ?>'
               data-ver-att='<?= h(json_encode(['fotos' => $rFotos, 'declaracion' => $rDecl])) ?>'><i class="bi bi-eye"></i> Ver</button>
+            <?php if ($user['rol'] !== 'visita'): ?>
             <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 me-1" style="font-size: 0.75rem;" data-bs-toggle="modal" data-bs-target="#mInc" data-target="#mInc" title="Editar"
               data-fill-form='<?= h(json_encode([
                   'id' => $r['id'],
@@ -217,6 +220,7 @@ foreach ($rows as $r) {
                   'reportado_por' => $r['reportado_por']
               ])) ?>'
               data-attachments='<?= h(json_encode(['fotos' => $rFotos, 'declaracion' => $rDecl])) ?>'><i class="bi bi-pencil"></i></button>
+            <?php endif; ?>
             <?php if (is_admin()): ?>
             <form method="post" action="?action=incident_delete" class="d-inline" onsubmit="return confirm('¿Eliminar incidencia?')">
               <input type="hidden" name="id" value="<?= $r['id'] ?>">

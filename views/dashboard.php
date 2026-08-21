@@ -181,7 +181,7 @@ $fOps     = db()->query("SELECT id, nombres FROM operators WHERE activo=1 ORDER 
 $hayFiltros = $F['desde']||$F['hasta']||$F['cargo']||$F['tipocap']||$F['instr']||$F['lugar']||$F['op'];
 
 // Paleta corporativa (para el JS)
-$PAL = ['navy'=>'#163A70','blue'=>'#2D9CDB','green'=>'#27AE60','amber'=>'#F2C94C','orange'=>'#F2994A','red'=>'#EB5757','mint'=>'#6FCF97'];
+$PAL = ['navy'=>'#065F46','blue'=>'#10B981','green'=>'#27AE60','amber'=>'#F2C94C','orange'=>'#F2994A','red'=>'#EB5757','mint'=>'#6FCF97'];
 ?>
 
 <div class="dashboard-intro d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
@@ -415,7 +415,7 @@ window.addEventListener('DOMContentLoaded', () => {
       plugins:{
         legend:{display:false},
         tooltip:{ callbacks:{ label:(c)=> ` ${c.formattedValue} h` } },
-        datalabels:{ display:true, anchor:'end', align:'top', color:'#163A70', font:{weight:700, size:11},
+        datalabels:{ display:true, anchor:'end', align:'top', color:'#065F46', font:{weight:700, size:11},
           formatter:(v)=> v > 0 ? v.toFixed(1) : '' }
       },
       layout:{ padding:{ top:18 } },
@@ -469,7 +469,7 @@ window.addEventListener('DOMContentLoaded', () => {
       plugins:{
         legend:{display:false},
         tooltip:{ callbacks:{ label:(c)=> ` ${c.formattedValue}%` } },
-        datalabels:{ display:true, anchor:'end', align:'top', color:'#163A70', font:{weight:700, size:12},
+        datalabels:{ display:true, anchor:'end', align:'top', color:'#065F46', font:{weight:700, size:12},
           formatter:(v)=> v.toFixed(1)+'%' }
       },
       layout:{ padding:{ top:18 } },
@@ -506,7 +506,7 @@ window.addEventListener('DOMContentLoaded', () => {
       plugins:{
         legend:{display:false},
         tooltip:{ callbacks:{ label:(c)=> ` ${c.formattedValue} s` } },
-        datalabels:{ display:true, anchor:'end', align:'end', color:'#163A70', font:{weight:700, size:11},
+        datalabels:{ display:true, anchor:'end', align:'end', color:'#065F46', font:{weight:700, size:11},
           formatter:(v)=> v+'s' }
       },
       layout:{ padding:{ right:26 } },

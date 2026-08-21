@@ -84,7 +84,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const sk = <?= json_encode(array_map(fn($r) => ['x' => $r['fecha'], 'y' => (float)$r['score'], 'a' => $r['area']], $skillSerie)) ?>;
   const sp = <?= json_encode(array_map(fn($r) => ['x' => $r['fecha'], 'y' => (float)$r['eficiencia'], 'a' => $r['area']], $speedSerie)) ?>;
   const byArea = (data) => {
-    const colors = { ARMG: '#10559A', QC: '#E01F26', PC: '#198754' };
+    const colors = { ARMG: '#065F46', QC: '#34D399', PC: '#10B981' };
     const groups = {};
     data.forEach(p => (groups[p.a] = groups[p.a] || []).push(p));
     return Object.entries(groups).map(([a, pts]) => ({

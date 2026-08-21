@@ -18,7 +18,7 @@ $rows = db()->query("SELECT * FROM users ORDER BY nombre")->fetchAll();
       <td class="fw-semibold"><?= h($r['nombre']) ?></td>
       <td><?= h($r['dni'] ?: '—') ?></td>
       <td><?= h($r['email']) ?></td>
-      <td><span class="badge bg-<?= ['admin' => 'danger', 'supervisor' => 'warning text-dark', 'instructor' => 'primary'][$r['rol']] ?? 'secondary' ?>"><?= h($r['rol']) ?></span></td>
+      <td><span class="badge bg-<?= ['admin' => 'danger', 'supervisor' => 'warning text-dark', 'instructor' => 'primary', 'visita' => 'info text-dark'][$r['rol']] ?? 'secondary' ?>"><?= h($r['rol']) ?></span></td>
       <td><?= $r['activo'] ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-x-circle-fill text-danger"></i>' ?></td>
       <td class="small text-muted"><?= h($r['created_at']) ?></td>
       <td class="text-end text-nowrap">
@@ -53,6 +53,7 @@ $rows = db()->query("SELECT * FROM users ORDER BY nombre")->fetchAll();
           <option value="instructor">Instructor</option>
           <option value="supervisor">Supervisor</option>
           <option value="admin">Administrador</option>
+          <option value="visita">Visita</option>
         </select></div>
       <div class="form-check ms-1">
         <input class="form-check-input" type="checkbox" name="activo" id="usActivo" checked>

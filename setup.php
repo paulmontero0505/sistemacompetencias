@@ -13,7 +13,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS users (
     dni VARCHAR(15) NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    rol ENUM('admin','instructor','supervisor') NOT NULL DEFAULT 'instructor',
+    rol ENUM('admin','instructor','supervisor','visita') NOT NULL DEFAULT 'instructor',
     activo TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB");

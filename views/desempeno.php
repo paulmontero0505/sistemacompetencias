@@ -155,9 +155,11 @@ ksort($cargosDesignados, SORT_NATURAL | SORT_FLAG_CASE);
       <p class="mb-0 opacity-75">Operadores asignados a esta grúa según el módulo de Operadores. El reporte de desempeño se construirá a partir de Habilidades.</p>
     </div>
     <div class="d-flex flex-column align-items-end gap-2">
+      <?php if ($user['rol'] !== 'visita'): ?>
       <button type="button" class="btn btn-light btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalBulkEstado">
         <i class="bi bi-people-fill"></i> Asignar en bloque
       </button>
+      <?php endif; ?>
       <a class="btn btn-outline-light btn-sm fw-semibold" target="_blank" rel="noopener"
          href="?page=formato&farea=<?= h($AREA_ACTUAL) ?>&blank=1&print=1"
          title="Abrir plantilla vacía para imprimir">

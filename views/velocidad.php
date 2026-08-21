@@ -64,9 +64,11 @@ $opsEvaluados = count($operadoresSet);
       <p class="mb-0 opacity-75">Registro de tiempos de ciclo y eficiencia en maniobras por operador.</p>
     </div>
     <div class="d-flex gap-2">
+      <?php if ($user['rol'] !== 'visita'): ?>
       <button type="button" class="btn btn-light btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalNuevoVelocidad">
         <i class="bi bi-plus-circle"></i> Nueva medición
       </button>
+      <?php endif; ?>
     </div>
   </div>
 </div>
@@ -123,10 +125,12 @@ $opsEvaluados = count($operadoresSet);
           <td><?= status_badge($r['status']) ?></td>
           <td class="small text-muted" style="max-width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?= h($r['observaciones']) ?>"><?= h($r['observaciones']) ?></td>
           <td class="text-end text-nowrap">
+            <?php if ($user['rol'] !== 'visita'): ?>
             <button type="button" class="btn btn-sm btn-outline-secondary py-0 me-1" title="Editar" onclick="editSpeed(this)"
               data-eval="<?= h(json_encode(array_merge($r, ['fases_arr' => $fases]))) ?>">
               <i class="bi bi-pencil"></i>
             </button>
+            <?php endif; ?>
             <button type="button" class="btn btn-sm btn-outline-primary py-0" data-bs-toggle="modal" data-bs-target="#modalVerVelocidad" title="Ver"
               data-ver='<?= h(json_encode([
                   'Fecha' => $r['fecha'],
@@ -144,10 +148,12 @@ $opsEvaluados = count($operadoresSet);
                   'Instructor' => $r['evaluador'],
                   'Observaciones' => $r['observaciones'],
               ])) ?>'><i class="bi bi-eye"></i></button>
+            <?php if ($user['rol'] !== 'visita'): ?>
             <form method="post" action="?action=speed_delete" class="d-inline" onsubmit="return confirm('¿Eliminar medición?')">
               <input type="hidden" name="id" value="<?= $r['id'] ?>">
               <button class="btn btn-sm btn-outline-danger py-0" title="Eliminar"><i class="bi bi-trash"></i></button>
             </form>
+            <?php endif; ?>
           </td>
         </tr>
       <?php endforeach; if (!$rows): ?>
